@@ -16,11 +16,13 @@ def Vanilla_node2node(N2N_config):
         random_state=N2N_config["random_seed"]
     )
 
-def Sequential_block(I2N_config, N2N_config):
-    input2node, node2node = Vanilla_input2node(I2N_config), Vanilla_node2node(N2N_config)
-    return Pipeline(
-        [( 'i2n', input2node), ('n2n', node2node)]
-    )
+def Sequential_block(I2N_config, N2N_config, blocks=1):
+    input2node = Vanilla_input2node(I2N_config)
+    pipeline = [('i2n', input2node)]
+    for i in range(blocks):
+        node2node = Vanilla_node2node(N2N_config)
+        pipeline.append(('n2n' + str(i+1), node2node))
+    return Pipeline(pipeline)
 
 def Parallel_block(I2N_config, N2N_config, blocks=2):
     pipeline = []
