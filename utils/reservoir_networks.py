@@ -1,21 +1,10 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 import json
 from sklearn.pipeline import Pipeline, FeatureUnion
 
 # Relative imports
 from pyrcn.base.blocks import InputToNode, NodeToNode
 from pyrcn.echo_state_network import ESNRegressor
-=======
-from pyrcn.base.blocks import InputToNode, NodeToNode
-from pyrcn.echo_state_network import ESNRegressor
 from sklearn.pipeline import Pipeline, FeatureUnion
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
-=======
-from pyrcn.base.blocks import InputToNode, NodeToNode
-from pyrcn.echo_state_network import ESNRegressor
-from sklearn.pipeline import Pipeline, FeatureUnion
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
 
 def Vanilla_input2node(I2N_config):
     return InputToNode(
@@ -31,15 +20,7 @@ def Vanilla_node2node(N2N_config):
         random_state=N2N_config["random_seed"]
     )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-def Sequential_block(I2N_config, N2N_config, blocks=2):
-=======
 def Sequential_block(I2N_config, N2N_config, blocks=1):
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
-=======
-def Sequential_block(I2N_config, N2N_config, blocks=1):
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
     input2node = Vanilla_input2node(I2N_config)
     pipeline = [('i2n', input2node)]
     for i in range(blocks):
@@ -56,8 +37,6 @@ def Parallel_block(I2N_config, N2N_config, blocks=2):
     
 
 def reservoir_network(I2N, N2N):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """
     TODO: Add description
     https://pyrcn.readthedocs.io/en/main/api/pyrcn.base.html
@@ -110,9 +89,3 @@ def return_reservoir_blocks(json_file, exec_args):
     
 if __name__ == '__main__':
     pass
-=======
-    return ESNRegressor(input_to_node=I2N, node_to_node=N2N)
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
-=======
-    return ESNRegressor(input_to_node=I2N, node_to_node=N2N)
->>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510

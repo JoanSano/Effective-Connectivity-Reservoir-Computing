@@ -54,7 +54,7 @@ def fmri_arguments(sub_parser):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series")
+    fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
     fmri.add_argument('-d', '--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Absolut path pointing to the directory where the data is stored")
     fmri.add_argument('-s', '--subjects', type=str, default='*', nargs='*', help="List of subjects to process. Default is all.")
 
