@@ -3,7 +3,7 @@ import numpy as np
 ## Relative imports
 from utils.RCC_utils import RCC_statistics
 
-def process_subject(subject_file, ROIs=-1):
+def process_subject(subject_file, ROIs):
     """
     TODO: Add description of the function
 
@@ -17,8 +17,15 @@ def process_subject(subject_file, ROIs=-1):
     TODO: Add output description.
     """
     
-    time_series = np.genfromtxt(subject_file, delimiter='\t')
-    r43, r44 = time_series[:,42], time_series[:,44]
+    # Load time series from subject
+    time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
+    # ROIs from input command
+    ROIs = list(range(time_series.shape[-1])) if ROIs == -1 else [roi-1 for roi in ROIs]
+    # Time series to analyse
+    TS2analyse = np.array([None] * len(ROIs)) # TODO: check what's faster this or an array with predefined length
+    for i, roi in enumerate(ROIs):
+        TS2analyse[i] = time_series[:,roi]
 
+	# TODO: time lags to test. Adrian suggested to test even further than 2,3 TRs    
 if __name__ == '__main__':
     pass

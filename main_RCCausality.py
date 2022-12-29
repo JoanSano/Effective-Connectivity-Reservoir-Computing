@@ -10,12 +10,11 @@ from subject_utils.single_subject import process_subject
 ####################
 ## Execution options
 opts, timeseries = handle_argumrnts()
-print(timeseries)
 
 ###########################
 ## Creating necessary paths
 root_dir = os.getcwd()
-data_dir = os.path.join(root_dir, 'Datasets/HCP_motor-task_12-subjects')
+data_dir = opts.dir
 results_dir = os.path.join(root_dir, opts.r_folder)
 if not os.path.exists(results_dir):
     os.mkdir(results_dir)
@@ -27,6 +26,7 @@ if __name__ == '__main__':
     
     ##########################################
     ## Loading the files with time series 
-    files = os.listdir(data_dir)
+    files = [os.path.join(root_dir, opts.dir, f) for f in os.listdir(opts.dir)]
+    process_subject(files[0], opts.rois)
     #Parallel(n_jobs=opts.num_jobs)(delayed(process_subject)(os.path.join(data_dir,f)) for f in files)
 

@@ -43,7 +43,7 @@ def optional_arguments(main_parser):
 
 def fmri_arguments(sub_parser):
     """
-    Adds optional arguments to the fmri argument parser
+    Adds an additional fmri argument parser as well as its options
 
     Arguments
     ---------
@@ -55,8 +55,9 @@ def fmri_arguments(sub_parser):
     """
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-    fmri.add_argument('-d', '--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Absolut path pointing to the directory where the data is stored")
+    fmri.add_argument('-d', '--dir', type=str, required=True, help="Relative path pointing to the directory where the data is stored")
     fmri.add_argument('-s', '--subjects', type=str, default='*', nargs='*', help="List of subjects to process. Default is all.")
+    fmri.add_argument('-r', '--rois', type=int, default=-1, nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
 
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
