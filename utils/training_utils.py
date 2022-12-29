@@ -35,3 +35,11 @@ def split_train_test_reshape(input,output,split):
 
     return x_train, y_train, x_test, y_test
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+if __name__ == '__main__':
+    pass
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510

@@ -6,7 +6,14 @@ from utils.reservoir_networks import reservoir_network
 def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20):
     # Rolling the time series
     input_data, output_data = input_output_lagged(input, output, lag)
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
     Remaining_points = output_data.shape[0]
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
+=======
+    Remaining_points = output_data.shape[0]
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
 
     # Split data in train and test
     input_train, output_train, input_test, output_test = split_train_test_reshape(input_data, output_data, split)
@@ -35,10 +42,23 @@ def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20):
     return correlations_i2o, correlations_o2i, results_i2o, results_o2i
 
 def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, return_results=True):
+<<<<<<< HEAD
+<<<<<<< HEAD
+    if return_results:
+        correlations_x2y, correlations_y2x, results_x2y, results_y2x = np.zeros((runs, lags.shape[0])), np.zeros((runs, lags.shape[0])), [], []
+
+    # We run several reservoirs in to test for the robustness of the predictions
+=======
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
     # We run several reservoirs in parallel
     if return_results:
         correlations_x2y, correlations_y2x, results_x2y, results_y2x = np.zeros((runs, lags.shape[0])), np.zeros((runs, lags.shape[0])), [], []
 
+<<<<<<< HEAD
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
     if return_results:
         for run in range(runs):
             # Single RCC run
@@ -49,4 +69,15 @@ def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, return_results
     else:
         for run in range(runs):
             # Single RCC run
+<<<<<<< HEAD
+<<<<<<< HEAD
             RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
+            
+if __name__ == '__main__':
+    pass
+=======
+            RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
+=======
+            RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510

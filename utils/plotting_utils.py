@@ -53,3 +53,12 @@ def plot_RCC_input2output(lags, rho_i2o, rho_o2i, **kwargs):
             plt.savefig(kwargs['name'])
     else:
         plt.show()
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+if __name__ == '__main__':
+    pass
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
+=======
+>>>>>>> 1cf6832f6b18363625f35930ef44e76dc778b510
