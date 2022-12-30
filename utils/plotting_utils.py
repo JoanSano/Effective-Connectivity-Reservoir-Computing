@@ -22,8 +22,8 @@ def plot_RCC_input2output(lags, rho_i2o, rho_o2i, **kwargs):
     left, bottom, width, height = [0.1, 0.325 , 0.85, 0.65]
     ax1 = fig.add_axes([left, bottom, width, height])
     # Plot main curves
-    ax1.plot(lags, rho_i2o, linewidth=2, color='blue', label=X+r'$ \rightarrow $'+Y+' (i.e, '+X+r'$_{t}$'+' predicts '+Y+r'$_{t+\tau}$'+')')
-    ax1.plot(lags, rho_o2i, linewidth=2, color='red', label=Y+r'$ \rightarrow $'+X+'  (i.e, '+Y+r'$_{t}$'+' predicts '+X+r'$_{t+\tau}$'+')')
+    ax1.plot(lags, rho_i2o, linewidth=2, color='blue', label=X+r'$_{t}$'+' predicts '+Y+r'$_{t+\tau}$')
+    ax1.plot(lags, rho_o2i, linewidth=2, color='red', label=Y+r'$_{t}$'+' predicts '+X+r'$_{t+\tau}$')
     # Plot peaks of correlation
     #ax1.vlines(x=max_o2i, ymin=0, ymax=np.max(rho_i2o), linewidth=1, color='blue', linestyles='--', label=r'$\tau$' + ' = ' + str(max_o2i))
     #ax1.vlines(x=max_i2o, ymin=0, ymax=np.max(rho_o2i), linewidth=1, color='red', linestyles='--', label=r'$\tau$' + ' = ' + str(max_i2o))
