@@ -1,6 +1,5 @@
 import os
 from joblib import Parallel, delayed
-import json
 
 ## Relative imports
 from utils.handle_arguments import handle_argumrnts
@@ -14,7 +13,6 @@ opts, timeseries = handle_argumrnts()
 ###########################
 ## Creating necessary paths
 root_dir = os.getcwd()
-data_dir = opts.dir
 results_dir = os.path.join(root_dir, opts.r_folder)
 if not os.path.exists(results_dir):
     os.mkdir(results_dir)
@@ -26,7 +24,8 @@ if __name__ == '__main__':
     
     ##########################################
     ## Loading the files with time series 
-    files = [os.path.join(root_dir, opts.dir, f) for f in os.listdir(opts.dir)]
-    process_subject(files[0], opts.rois)
+    # TODO: Test for a specific selection of subjects from command line
+    files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir)]
+    process_subject(files[0], opts.rois, I2N, N2N, opts.split, opts.skip, opts.runs, results_dir, format='png')
     #Parallel(n_jobs=opts.num_jobs)(delayed(process_subject)(os.path.join(data_dir,f)) for f in files)
 

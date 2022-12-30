@@ -1,6 +1,6 @@
  {
     "Input_2_Node": {
-        "layer_size": 200,
+        "layer_size": 30,
         "sparsity": 0.3,
         "activation": "tanh",
         "scaling": 1,
@@ -11,7 +11,7 @@
     },
 
     "Node_2_Node": {
-        "layer_size": 200,
+        "layer_size": 30,
         "sparsity": 1,
         "activation": "logistic",
         "spectral_radius": 1,

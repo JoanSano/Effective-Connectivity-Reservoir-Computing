@@ -4,6 +4,10 @@ from utils.training_utils import input_output_lagged, split_train_test_reshape
 from utils.reservoir_networks import reservoir_network
 
 def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20):
+    """
+    TODO: Add description
+    """
+
     # Rolling the time series
     input_data, output_data = input_output_lagged(input, output, lag)
 
@@ -18,6 +22,10 @@ def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20):
     return np.corrcoef(output_test[skip:],output_pred[skip:])[0,1], [output_test, output_pred]
 
 def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20):
+    """
+    TODO: Add description
+    """
+
     # Try different time lags
     correlations_i2o, correlations_o2i = [], []
     results_i2o, results_o2i = [], []
@@ -33,25 +41,21 @@ def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20):
         correlations_o2i.append(rho)
     return correlations_i2o, correlations_o2i, results_i2o, results_o2i
 
-def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, return_results=True):
-    if return_results:
-        correlations_x2y, correlations_y2x, results_x2y, results_y2x = np.zeros((runs, lags.shape[0])), np.zeros((runs, lags.shape[0])), [], []
+def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20):
+    """
+    TODO: Add description
+    """
 
     # We run several reservoirs in parallel
-    if return_results:
-        correlations_x2y, correlations_y2x, results_x2y, results_y2x = np.zeros((runs, lags.shape[0])), np.zeros((runs, lags.shape[0])), [], []
+    correlations_x2y, correlations_y2x, results_x2y, results_y2x = np.zeros((runs, lags.shape[0])), np.zeros((runs, lags.shape[0])), [], []
 
-    if return_results:
-        for run in range(runs):
-            # Single RCC run
-            correlations_x2y[run,:], correlations_y2x[run,:], r_x2y, r_y2x = RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
-            results_x2y.append(r_x2y)
-            results_y2x.append(r_y2x)
-        return correlations_x2y, correlations_y2x, results_x2y, results_y2x
-    else:
-        for run in range(runs):
-            # Single RCC run
-            RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
+    for run in range(runs):
+        # Single RCC run
+        correlations_x2y[run,:], correlations_y2x[run,:], r_x2y, r_y2x = RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip)
+        results_x2y.append(r_x2y)
+        results_y2x.append(r_y2x)
+
+    return correlations_x2y, correlations_y2x, results_x2y, results_y2x
             
 if __name__ == '__main__':
     pass

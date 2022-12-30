@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 
 def optional_arguments(main_parser):
     """
@@ -12,32 +13,11 @@ def optional_arguments(main_parser):
     ------
     main_parser: (object) Includes the optional command line arguments stored as attributes
     """
-
-    main_parser.add_argument(
-        '-rf','--r_folder', 
-        type=str, 
-        default='Results', 
-        help="Output directory where results will be stored"
-    )
-    main_parser.add_argument(
-        '-j', '--num_jobs', 
-        type=int, 
-        default=2, 
-        help='Number of parallel jobs to launch'
-    )
-    main_parser.add_argument(
-        '-b', '--blocks', 
-        type=str, 
-        choices=['vanilla', 'sequential', 'parallel'], 
-        default="vanilla", 
-        help="Choose the type of architecture"
-    )
-    main_parser.add_argument(
-        '-nb', '--num_blocks', 
-        type=int, 
-        default=None, 
-        help="If not 'vanilla' specifiy as a second argument the number of blocks"
-    )
+    def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
+    main_parser.add_argument('-rf','--r_folder', type=str, default=def_folder, help="Output directory where results will be stored")
+    main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
+    main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
+    main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
 
     return main_parser
 
@@ -55,9 +35,12 @@ def fmri_arguments(sub_parser):
     """
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-    fmri.add_argument('-d', '--dir', type=str, required=True, help="Relative path pointing to the directory where the data is stored")
-    fmri.add_argument('-s', '--subjects', type=str, default='*', nargs='*', help="List of subjects to process. Default is all.")
-    fmri.add_argument('-r', '--rois', type=int, default=-1, nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
+    fmri.add_argument('--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Relative path pointing to the directory where the data is stored")
+    fmri.add_argument('--subjects', type=str, default='*', nargs='*', help="List of subjects to process. Default is all.")
+    fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
+    fmri.add_argument('--split', type=int, default=75, help="Train-test split percentage as an integer from 0 to 100")
+    fmri.add_argument('--skip', type=int, default=5, help="Number of time points to skip when testing predictability")
+    fmri.add_argument('--runs', type=int, default=1, help="Number of times to run RCC on a given pair of real samples")
 
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
@@ -77,15 +60,8 @@ def logistic_arguments(sub_parser):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    logistic = sub_parser.add_parser(
-        'logistic',
-        help="Ignore"
-    )
-    logistic.add_argument(
-        '-i', '--ignore',
-        default=None,
-        help="Ignore. this branch will include several features for the logistic time series"
-    )
+    logistic = sub_parser.add_parser('logistic', help="Ignore")
+    logistic.add_argument('-i', '--ignore', default=None, help="Ignore. this branch will include several features for the logistic time series")
 
     # logistic positional argument is present
     logistic.set_defaults(func=lambda: 'logistic')
