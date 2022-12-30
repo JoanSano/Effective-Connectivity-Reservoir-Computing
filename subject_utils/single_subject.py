@@ -6,7 +6,7 @@ from utils.RCC_utils import RCC_statistics
 from utils.reservoir_networks import return_reservoir_blocks
 from utils.plotting_utils import plot_RCC_input2output
 
-def process_subject(subject_file, opts, output_dir, format='svg'):
+def process_subject(subject_file, opts, output_dir, json_config, format='svg'):
     """
     TODO: Add description of the function
 
@@ -43,7 +43,7 @@ def process_subject(subject_file, opts, output_dir, format='svg'):
             print("index j:", j, "ROI:", roi_j+1, TS2analyse[j,:3], TS2analyse[j,-3:])
             print("============")
             # Initialization of the Reservoir blocks
-            I2N, N2N = return_reservoir_blocks(json_file='./reservoir_config.json', exec_args=opts)
+            I2N, N2N = return_reservoir_blocks(json_file=json_config, exec_args=opts)
 
             # Run RCC
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics(
