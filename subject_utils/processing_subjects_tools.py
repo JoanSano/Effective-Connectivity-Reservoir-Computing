@@ -39,12 +39,9 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
     for i, roi_i in enumerate(ROIs):
         for j in range(i if run_self_loops else i+1, len(ROIs)):
             roi_j = ROIs[j]
-            print("index i:", i, "ROI:", roi_i+1, TS2analyse[i,:3], TS2analyse[i,-3:])
-            print("index j:", j, "ROI:", roi_j+1, TS2analyse[j,:3], TS2analyse[j,-3:])
-            print("============")
             # Initialization of the Reservoir blocks
             I2N, N2N = return_reservoir_blocks(json_file=json_file_config, exec_args=opts)
-
+            print(TS2analyse[i].shape)
             # Run RCC
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics(
                 TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip
@@ -70,6 +67,21 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
                 save=name_subject_RCC_figure, dpi=300, 
                 series_names=(f'R({roi_i+1})', f'R({roi_j+1})')
             )
+
+def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config, format='svg'):
+    """
+    TODO: Add description of the function
+
+    Arguments
+    -----------
+    subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+    TODO: finish arguments
+
+    Outputs
+    -----------
+    TODO: Add output description.
+    """
+
 
 if __name__ == '__main__':
     pass
