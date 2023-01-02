@@ -22,7 +22,7 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
 
     ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
     
-    # Load time series from subject
+    # Load time series from subject -- dims: time-points X ROIs
     time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
 
     # ROIs from input command
@@ -41,10 +41,10 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
             roi_j = ROIs[j]
             # Initialization of the Reservoir blocks
             I2N, N2N = return_reservoir_blocks(json_file=json_file_config, exec_args=opts)
-            print(TS2analyse[i].shape)
+            
             # Run RCC
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics(
-                TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip
+                TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, axis=0
             )
             del I2N, N2N
 
