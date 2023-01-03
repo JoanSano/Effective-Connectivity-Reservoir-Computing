@@ -3,16 +3,16 @@ import numpy as np
 from utils.training_utils import input_output_lagged, split_train_test_reshape, prepare_data
 from utils.reservoir_networks import reservoir_network
 
-def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20, shuffle=False):
+def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20, shuffle=False, axis=0):
     """
     TODO: Add description
     """
     # Rolling the time series
-    input_data, output_data = input_output_lagged(input, output, lag)
+    input_data, output_data = input_output_lagged(input, output, lag, axis=axis)
     
     # Split data in train and test
-    input_train, output_train, input_test, output_test = split_train_test_reshape(input_data, output_data, split, shuffle=shuffle)
-      
+    input_train, output_train, input_test, output_test = split_train_test_reshape(input_data, output_data, split, shuffle=shuffle, axis=axis)
+    
     # Prepare data
     input_train, output_train, input_test, output_test = prepare_data(input_train, output_train, input_test, output_test)
     
@@ -20,10 +20,11 @@ def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20, shuf
     reservoir_i2o = reservoir_network(I2N, N2N)
     reservoir_i2o.fit(X=input_train, y=output_train)
     output_pred = reservoir_i2o.predict(input_test)[0]
-    
+    # TODO: The corrcoed is not computed correctly NEVER
+    # TODO: Result arrays are also wrong
     return np.corrcoef(output_test[0][skip:],output_pred[skip:])[0,1], (output_test[0], output_pred)
 
-def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20, shuffle=False):
+def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0):
     """
     TODO: Add description
     """
@@ -33,17 +34,17 @@ def RCC_input2output(input, output, lags, I2N, N2N, split=75, skip=20, shuffle=F
     results_i2o, results_o2i = [], []
     for lag in lags:
         # x(t) predicts y(t+t*)
-        rho, results = reservoir_input2output(input, output, lag, I2N, N2N, split=split, skip=skip, shuffle=shuffle)
+        rho, results = reservoir_input2output(input, output, lag, I2N, N2N, split=split, skip=skip, shuffle=shuffle, axis=axis)
         results_i2o.append(results)
         correlations_i2o.append(rho)
 
         # y(t) predicts x(t+t*)
-        rho, results = reservoir_input2output(output, input, lag, I2N, N2N, split=split, skip=skip, shuffle=shuffle)
+        rho, results = reservoir_input2output(output, input, lag, I2N, N2N, split=split, skip=skip, shuffle=shuffle, axis=axis)
         results_o2i.append(results)
         correlations_o2i.append(rho)
     return correlations_i2o, correlations_o2i, results_i2o, results_o2i
 
-def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, shuffle=False):
+def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, shuffle=False, axis=0):
     """
     TODO: Add description
     """
@@ -53,7 +54,7 @@ def RCC_statistics(x, y, lags, runs, I2N, N2N, split=75, skip=20, shuffle=False)
     
     for run in range(runs):
         # Single RCC run
-        correlations_x2y[run,:], correlations_y2x[run,:], r_x2y, r_y2x = RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip, shuffle=shuffle)
+        correlations_x2y[run,:], correlations_y2x[run,:], r_x2y, r_y2x = RCC_input2output(x, y, lags, I2N, N2N, split=split, skip=skip, shuffle=shuffle, axis=axis)
         results_x2y.append(r_x2y)
         results_y2x.append(r_y2x)
 

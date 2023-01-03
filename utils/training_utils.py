@@ -32,11 +32,14 @@ def initialize_and_grep_files():
 
     return opts, files, results_dir, json_config
 
-def input_output_lagged(input, output, target_lag):
+def input_output_lagged(input, output, target_lag, axis=0):
     """
     TODO: Add description
     initial dims: subjects X time-points
     """
+
+    if axis != 0:
+        np.swapaxes(input, 0, axis), np.swapaxes(output, 0, axis) 
 
     # Roll the target time series so the Reservoir predicts the time series at a given time lag
     target_lag = int(target_lag)
@@ -53,9 +56,11 @@ def input_output_lagged(input, output, target_lag):
         x_data = input
         y_data = output
     
+    if axis != 0:
+        np.swapaxes(x_data, 0, axis), np.swapaxes(y_data, 0, axis) 
     return x_data, y_data
 
-def split_train_test_reshape(input, output, split, shuffle=False):
+def split_train_test_reshape(input, output, split, shuffle=False, axis=0):
     """
     TODO: Add description
     The split is done according to the first dimension of the array or accross the items of the list.
@@ -64,6 +69,9 @@ def split_train_test_reshape(input, output, split, shuffle=False):
     # Dimensions of arrays need to be equal (input --> target)
     assert output.shape == input.shape
     
+    if axis != 0:
+        input, output = np.swapaxes(input, 0, axis), np.swapaxes(output, 0, axis) 
+        
     # Shuffle data (in development)
     if shuffle:
         # TODO: Check is it keeps the same input-output relationships!
@@ -94,6 +102,10 @@ def split_train_test_reshape(input, output, split, shuffle=False):
 
         x_test = input[limit:,...]
         y_test = output[limit:,...]
+        
+    if axis != 0:
+        x_train, y_train = np.swapaxes(x_train, 0, axis), np.swapaxes(y_train, 0, axis) 
+        x_test, y_test = np.swapaxes(x_test, 0, axis), np.swapaxes(y_test, 0, axis) 
     
     # Adding an extra dimension to training data --> n_features=1
     return  np.expand_dims(x_train, axis=-1), y_train,  np.expand_dims(x_test, axis=-1),  y_test
