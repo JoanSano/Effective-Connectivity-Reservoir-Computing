@@ -1,89 +1,117 @@
 import numpy as np
-import matplotlib.pylab as plt
+import os
+
+# Relative imports
+from utils.handle_arguments import handle_argumrnts
+
+def initialize_and_grep_files():
+    """
+    TODO: Add documentation
+    """
+    
+    # Execution options
+    opts, timeseries = handle_argumrnts()
+    
+    # Creating necessary paths
+    root_dir = os.getcwd()
+    results_dir = os.path.join(root_dir, opts.r_folder)
+    if not os.path.exists(results_dir):
+        os.mkdir(results_dir)
+        
+    # Drop command line call for transparency
+    with open(os.path.join(results_dir, 'commandline_args.txt'), 'w') as f:
+        for arg, val in zip(opts.__dict__.keys(),opts.__dict__.values()):
+            f.write(arg+': '+str(val)+'\n')
+
+    # Reservoir Architecture parameters file
+    json_config = './reservoir_config.json'
+    os.system(f"cp {json_config} {results_dir}")
+
+    # Corresponding data files
+    files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
+
+    return opts, files, results_dir, json_config
 
 def input_output_lagged(input, output, target_lag):
     """
     TODO: Add description
+    initial dims: subjects X time-points
     """
 
+    # Roll the target time series so the Reservoir predicts the time series at a given time lag
     target_lag = int(target_lag)
     if target_lag > 0:
-        # Here we manually roll the target time series so the Reservoir predicts the time series at a given time lag
         # x(t) --> x(t-t*) where t* is the lag
-        x_data = input[:-target_lag]
-        y_data = output[target_lag:]
-        return x_data, y_data
+        x_data = input[:,:-target_lag]
+        y_data = output[:,target_lag:]
     elif target_lag < 0:
-        # Here we manually roll the target time series so the Reservoir predicts the time series at a given time lag
         # x(t) --> x(t+t*) where t* is the lag
-        x_data = input[-target_lag:]
-        y_data = output[:target_lag]
-        return x_data, y_data
+        x_data = input[:,-target_lag:]
+        y_data = output[:,:target_lag]
     else: 
         # If no lag, then return the data as it is
         x_data = input
         y_data = output
-        return x_data, y_data
+    
+    return x_data, y_data
 
-def split_train_test_reshape(input, output, split, axis=0):
+def split_train_test_reshape(input, output, split, shuffle=False):
     """
     TODO: Add description
+    The split is done according to the first dimension of the array or accross the items of the list.
     """
-
-    # Swap the axis you want the split to be applied and swap with the 0-th
-    # Should only be used for 2D arrays although the code will work for higher dimensional cases
-    swapped_input = np.swapaxes(input, 0, axis)
-    swapped_output = np.swapaxes(output, 0, axis)
-    assert swapped_output.shape[0] == swapped_input.shape[0]
+    
+    # Dimensions of arrays need to be equal (input --> target)
+    assert output.shape == input.shape
+    
+    # Shuffle data (in development)
+    if shuffle:
+        # TODO: Check is it keeps the same input-output relationships!
+        indices = np.arange(input.shape[0])
+        np.random.shuffle(indices)
+        input, output = input[indices], output[indices]
 
     if split == 100:
         # No split. Train and test data are the same
-        x_train = swapped_input
-        y_train = swapped_output
+        x_train = input
+        y_train = output
 
-        x_test = swapped_input
-        y_test = swapped_output
+        x_test = input
+        y_test = output
     elif split == -1: 
         # 1-fold cross validation
-        x_train = swapped_input[:-1,...]
-        y_train = swapped_output[:-1,...]
-
-        x_test = swapped_input[-1,...]
-        y_test = swapped_output[-1,...]
+        x_train = input[:-1,...]
+        y_train = output[:-1,...]
+        # shape is kept as (1,T) for further compatibility
+        x_test = input[-1,...].reshape(1,-1)
+        y_test = output[-1,...].reshape(1,-1)
     # TODO: implement k-fold cross validation
     else:
         # Split data in train and test
-        limit = int(swapped_output.shape[0]*0.01*split)
-        x_train = swapped_input[:limit,...]
-        y_train = swapped_output[:limit,...]
+        limit = int(output.shape[0]*0.01*split)
+        x_train = input[:limit,...]
+        y_train = output[:limit,...]
 
-        x_test = swapped_input[limit:,...]
-        y_test = swapped_output[limit:,...]
-   
-    if len(swapped_input.shape) == 1:
-        return x_train.reshape(-1,1), y_train, x_test.reshape(-1,1), y_test
-    elif split == -1:
-        return x_train.T, y_train.T, x_test.reshape(-1,1), y_test.T
-    else:  
-        # Re-swap the axis so that the split is positioned in the 1st axis (or the second dimension)
-        return  x_train.T, y_train.T,  x_test.T,  y_test.T
+        x_test = input[limit:,...]
+        y_test = output[limit:,...]
+    
+    # Adding an extra dimension to training data --> n_features=1
+    return  np.expand_dims(x_train, axis=-1), y_train,  np.expand_dims(x_test, axis=-1),  y_test
+
+def prepare_data(*args, axis=0):
+    """
+    TODO: Add documentation
+    """
+
+    # For each argument we prepare an empty numpy array
+    prepared_data = []
+    for j, array in enumerate(args):
+        n_sequences = args[j].shape[axis] 
+        temp_data = np.empty(shape=n_sequences, dtype=object)
+        for i in range(n_sequences):
+            temp_data[i] = array[i,...]
+        prepared_data.append(temp_data)
+    return prepared_data
 
 if __name__ == '__main__':
-    """
-    Program description:
-    --------------------
-    Code snipped to test that the spliting of the data correct. 
-    You can use this code to make sure that the input and target 
-        are splitted along the desired axis. It returns all the 
-        array shapes that are going to be fitted to the reservoir.
-    Obviously, it reshapes everything according to PyRCN specs.
-    """
-
-    import sys
-    axis = int(sys.argv[1])
-    x = np.random.rand(500)
-    print("Array shape: ", x.shape)
-    print("Axis to split: ", axis)
-    a, b, c, d = split_train_test_reshape(x,x,split=-1, axis=axis)
-    print("Train and test input shapes: ", a.shape, c.shape)
-    print("Train and test target shapes: ", b.shape, d.shape)
+    pass

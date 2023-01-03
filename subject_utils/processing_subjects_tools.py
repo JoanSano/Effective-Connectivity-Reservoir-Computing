@@ -22,7 +22,7 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
 
     ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
     
-    # Load time series from subject -- dims: time-points X ROIs
+    # Load time series from subject -- dims: time-points X total-ROIs
     time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
 
     # ROIs from input command
@@ -44,7 +44,7 @@ def process_subject(subject_file, opts, output_dir, json_file_config, format='sv
             
             # Run RCC
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics(
-                TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, axis=0
+                TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, shuffle=False
             )
             del I2N, N2N
 
@@ -82,6 +82,55 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
     TODO: Add output description.
     """
 
+    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
+    
+    # Load time series from subject -- dims: subjects X time-points X total-ROIs
+    time_series = np.array([np.genfromtxt(subject, delimiter='\t')[:,1:] for subject in subjects_files])
+
+    # ROIs from input command
+    ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
+
+    # Time series to analyse -- dims: ROIs X subjects X time-points
+    TS2analyse = np.array([time_series[...,roi] for roi in ROIs])
+
+    # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
+    lags, runs = np.arange(-30,31), runs
+
+    # Compute RCC causality 
+    run_self_loops = True
+    for i, roi_i in enumerate(ROIs):
+        for j in range(i if run_self_loops else i+1, len(ROIs)):
+            roi_j = ROIs[j]
+
+            # Initialization of the Reservoir blocks
+            I2N, N2N = return_reservoir_blocks(json_file=json_file_config, exec_args=opts)
+
+            # Run RCC
+            correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics( # Dimensions: subjects X time-points
+                    TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, shuffle=False
+            )
+
+            del I2N, N2N
+
+            # Statistics
+            mean_x2y, sem_x2y = np.mean(correlations_x2y, axis=0), np.std(correlations_x2y, axis=0)/np.sqrt(runs)
+            mean_y2x, sem_y2x = np.mean(correlations_y2x, axis=0), np.std(correlations_y2x, axis=0)/np.sqrt(runs)
+
+            # Destination directories and names of outputs
+            #name_subject = subject_file.split("/")[-1].split("_TS")[0]
+            #output_dir_subject = os.path.join(output_dir,name_subject)
+            #if not os.path.exists(output_dir_subject):
+            #    os.mkdir(output_dir_subject)
+            name_roi_RCC = 'RCC_rois-' +str(roi_i+1) + 'vs' + str(roi_j+1)
+            name_roi_RCC_figure = os.path.join(output_dir,name_roi_RCC+'.' + format)
+
+            # Plot Causality  
+            plot_RCC_input2output(
+                lags, mean_x2y, mean_y2x, 
+                error_i2o=sem_x2y, error_o2i=sem_y2x, 
+                save=name_roi_RCC_figure, dpi=300, 
+                series_names=(f'R({roi_i+1})', f'R({roi_j+1})')
+            )
 
 if __name__ == '__main__':
     pass

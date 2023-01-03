@@ -37,7 +37,7 @@ def fmri_arguments(sub_parser):
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
     fmri.add_argument('--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Relative path pointing to the directory where the data is stored")
-    fmri.add_argument('--subjects', type=str, default='*', nargs='*', help="List of subjects to process. Default is all.")
+    fmri.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
     fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
     fmri.add_argument('--split', type=int, default=75, help="Train-test split percentage as an integer from 0 to 100")
     fmri.add_argument('--skip', type=int, default=20, help="Number of time points to skip when testing predictability")
