@@ -2,30 +2,28 @@
 
 ### Overall help
 $python main_RCCausality.py --help
+
 usage:
-Compute Reservoir Computing Causality on time series.
-In development.
- [-h] [-rf R_FOLDER] [-j NUM_JOBS] [-b {vanilla,sequential,parallel}] [-nb NUM_BLOCKS]
-                                                                               [--batch_analysis]
-                                                                               {fmri,logistic} ...
+Compute Reservoir Computing Causality on time series. In development.
+
+[-h] [-rf R_FOLDER] [-j NUM_JOBS] [-b {vanilla,sequential,parallel}] [-nb NUM_BLOCKS] [--batch_analysis]
+{fmri,logistic} ...
 
 positional arguments:
-  {fmri,logistic}
-    fmri                Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs
-    logistic            Ignore
+
+{fmri,logistic}
+
+  fmri                Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs
+  logistic            Ignore
 
 options:
-  -h, --help            show this help message and exit
-  -rf R_FOLDER, --r_folder R_FOLDER
-                        Output directory where results will be stored
-  -j NUM_JOBS, --num_jobs NUM_JOBS
-                        Number of parallel jobs to launch
-  -b {vanilla,sequential,parallel}, --blocks {vanilla,sequential,parallel}
-                        Choose the type of architecture
-  -nb NUM_BLOCKS, --num_blocks NUM_BLOCKS
-                        If not 'vanilla' specifiy as a second argument the number of blocks
-  --batch_analysis      Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and
-                        the results will be avraged.
+
+-h, --help  show this help message and exit \n
+-rf R_FOLDER, --r_folder R_FOLDER  Output directory where results will be stored
+-j NUM_JOBS, --num_jobs NUM_JOBS  Number of parallel jobs to launch
+-b {vanilla,sequential,parallel}, --blocks {vanilla,sequential,parallel}  Choose the type of architecture
+-nb NUM_BLOCKS, --num_blocks NUM_BLOCKS  If not 'vanilla' specifiy as a second argument the number of blocks
+--batch_analysis      Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.
 
 ### fmri help
 $python main_RCCausality.py fmri --help
