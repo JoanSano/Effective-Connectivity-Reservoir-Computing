@@ -20,7 +20,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     TODO: Add output description.
     """
 
-    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, 1
+    ROIs, split, skip = opts.rois, opts.split, opts.skip
     
     # Load time series from subject -- dims: time-points X total-ROIs
     time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
@@ -34,7 +34,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     )
     
     # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
-    lags, runs = np.arange(-30,31), runs
+    lags = np.arange(-30,31)
 
     # Compute RCC causality
     run_self_loops = True
@@ -47,13 +47,13 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             
             # Run RCC on axis #1 (i.e., the time points)
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics(
-                TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1
+                TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1
             )
             del I2N, N2N
-
-            # Statistics
-            mean_x2y, sem_x2y = np.mean(correlations_x2y, axis=0), np.std(correlations_x2y, axis=0)/np.sqrt(runs)
-            mean_y2x, sem_y2x = np.mean(correlations_y2x, axis=0), np.std(correlations_y2x, axis=0)/np.sqrt(runs)
+            
+            # TODO: Statistics
+            mean_x2y, sem_x2y = correlations_x2y#np.mean(correlations_x2y, axis=0), np.std(correlations_x2y, axis=0)
+            mean_y2x, sem_y2x = correlations_y2x#np.mean(correlations_y2x, axis=0), np.std(correlations_y2x, axis=0)
 
             # Destination directories and names of outputs
             name_subject = subject_file.split("/")[-1].split("_TS")[0]
@@ -77,15 +77,14 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
 
     Arguments
     -----------
-    subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
-    TODO: finish arguments
+    TODO: Add arguments 
 
     Outputs
     -----------
     TODO: Add output description.
     """
 
-    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, 1
+    ROIs, split, skip = opts.rois, opts.split, opts.skip
     
     # Load time series from subject -- dims: subjects X time-points X total-ROIs
     time_series = np.array([np.genfromtxt(subject, delimiter='\t')[:,1:] for subject in subjects_files])
@@ -97,7 +96,7 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
     TS2analyse = np.array([time_series[...,roi] for roi in ROIs])
 
     # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
-    lags, runs = np.arange(-30,31), runs
+    lags = np.arange(-30,31)
 
     # Compute RCC causality 
     run_self_loops = True
@@ -110,13 +109,13 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
 
             # Run RCC on axis #0 (i.e., the subjects)
             correlations_x2y, correlations_y2x, results_x2y, results_y2x = RCC_statistics( # Dimensions: subjects X time-points
-                    TS2analyse[i], TS2analyse[j], lags, runs, I2N, N2N, split=split, skip=skip, shuffle=False
+                    TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False
             )
             del I2N, N2N
-
-            # Statistics
-            mean_x2y, sem_x2y = np.mean(correlations_x2y, axis=0), np.std(correlations_x2y, axis=0)/np.sqrt(runs)
-            mean_y2x, sem_y2x = np.mean(correlations_y2x, axis=0), np.std(correlations_y2x, axis=0)/np.sqrt(runs)
+            
+            # TODO: Statistics
+            mean_x2y, sem_x2y = correlations_x2y#np.mean(correlations_x2y, axis=0), np.std(correlations_x2y, axis=0)
+            mean_y2x, sem_y2x = correlations_y2x#np.mean(correlations_y2x, axis=0), np.std(correlations_y2x, axis=0)
 
             # Destination names of outputs
             name_roi_RCC = 'RCC_rois-' +str(roi_i+1) + 'vs' + str(roi_j+1)

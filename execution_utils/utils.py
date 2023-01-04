@@ -8,9 +8,11 @@ def run_RCC():
     opts, files, results_dir, json_config, timeseries_type = initialize_and_grep_files()
     
     if not opts.batch_analysis or len(files) == 1:
-        process_multiple_subjects(files, opts, results_dir, json_config, format='png')
-    else:
+        print("Single subject")
         process_single_subject(files[0], opts, results_dir, json_config, format='png')
+    else:
+        print("Multiple subjects")
+        process_multiple_subjects(files, opts, results_dir, json_config, format='png')
 
 # TODO: Where, if possible, can I parallelize?
 #Parallel(n_jobs=opts.num_jobs)(delayed(process_subject)(os.path.join(data_dir,f)) for f in files)
