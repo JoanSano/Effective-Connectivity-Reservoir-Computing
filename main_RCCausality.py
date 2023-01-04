@@ -1,13 +1,13 @@
 from joblib import Parallel, delayed
 
 ## Relative imports
-from utils.training_utils import initialize_and_grep_files
+from utils.handle_arguments import initialize_and_grep_files
 from subject_utils.processing_subjects_tools import process_single_subject, process_multiple_subjects
 
 if __name__ == '__main__':
     ########################################
     # Loading the configurations and files with time series 
-    opts, files, results_dir, json_config = initialize_and_grep_files()
+    opts, files, results_dir, json_config, timeseries_type = initialize_and_grep_files()
     
     # TODO: Add flag for batch or single processing 
     # NOTE: When a single subject is used, it should identify that flag as single subject

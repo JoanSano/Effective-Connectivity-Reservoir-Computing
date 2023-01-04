@@ -1,36 +1,4 @@
 import numpy as np
-import os
-
-# Relative imports
-from utils.handle_arguments import handle_argumrnts
-
-def initialize_and_grep_files():
-    """
-    TODO: Add documentation
-    """
-    
-    # Execution options
-    opts, timeseries = handle_argumrnts()
-    
-    # Creating necessary paths
-    root_dir = os.getcwd()
-    results_dir = os.path.join(root_dir, opts.r_folder)
-    if not os.path.exists(results_dir):
-        os.mkdir(results_dir)
-        
-    # Drop command line call for transparency
-    with open(os.path.join(results_dir, 'commandline_args.txt'), 'w') as f:
-        for arg, val in zip(opts.__dict__.keys(),opts.__dict__.values()):
-            f.write(arg+': '+str(val)+'\n')
-
-    # Reservoir Architecture parameters file
-    json_config = './reservoir_config.json'
-    os.system(f"cp {json_config} {results_dir}")
-
-    # Corresponding data files
-    files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
-
-    return opts, files, results_dir, json_config
 
 def input_output_lagged(input, output, target_lag, axis=0):
     """

@@ -1,6 +1,6 @@
 import argparse
 from datetime import datetime
-import json
+import os
 
 def optional_arguments(main_parser):
     """
@@ -14,12 +14,14 @@ def optional_arguments(main_parser):
     ------
     main_parser: (object) Includes the optional command line arguments stored as attributes
     """
+    
     def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
     main_parser.add_argument('-rf','--r_folder', type=str, default=def_folder, help="Output directory where results will be stored")
     main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
     main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
     main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
-
+    main_parser.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
+    
     return main_parser
 
 def fmri_arguments(sub_parser):
@@ -41,7 +43,6 @@ def fmri_arguments(sub_parser):
     fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
     fmri.add_argument('--split', type=int, default=75, help="Train-test split percentage as an integer from 0 to 100")
     fmri.add_argument('--skip', type=int, default=20, help="Number of time points to skip when testing predictability")
-    fmri.add_argument('--runs', type=int, default=1, help="Number of times to run RCC on a given pair of real samples")
 
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
@@ -105,5 +106,33 @@ def handle_argumrnts():
         print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic}")
         quit()
     
+def initialize_and_grep_files():
+    """
+    TODO: Add documentation
+    """
+    
+    # Execution options
+    opts, timeseries_type = handle_argumrnts()
+    
+    # Creating necessary paths
+    root_dir = os.getcwd()
+    results_dir = os.path.join(root_dir, opts.r_folder)
+    if not os.path.exists(results_dir):
+        os.mkdir(results_dir)
+        
+    # Drop command line call for transparency
+    with open(os.path.join(results_dir, 'commandline_args.txt'), 'w') as f:
+        for arg, val in zip(opts.__dict__.keys(),opts.__dict__.values()):
+            f.write(arg+': '+str(val)+'\n')
+
+    # Reservoir Architecture parameters file
+    json_config = './reservoir_config.json'
+    os.system(f"cp {json_config} {results_dir}")
+
+    # Corresponding data files
+    files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
+
+    return opts, files, results_dir, json_config, timeseries_type
+
 if __name__ == '__main__':
     pass
