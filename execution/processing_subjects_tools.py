@@ -2,8 +2,8 @@ import numpy as np
 import os
 
 ## Relative imports
-from utils.RCC_utils import RCC_statistics
-from utils.reservoir_networks import return_reservoir_blocks
+from execution.RCC_utils import RCC_average
+from execution.reservoir_networks import return_reservoir_blocks
 from utils.plotting_utils import plot_RCC_input2output
 
 def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg'):
@@ -20,7 +20,9 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     TODO: Add output description.
     """
 
-    ROIs, split, skip = opts.rois, opts.split, opts.skip
+    name_subject = subject_file.split("/")[-1].split("_TS")[0]
+    print(f"Participant ID: {name_subject}")
+    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
     
     # Load time series from subject -- dims: time-points X total-ROIs
     time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
@@ -46,12 +48,11 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             roi_j = ROIs[j]
             
             # Run RCC on axis #1 (i.e., the time points)
-            mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_statistics(
-                TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1
+            mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_average(
+                TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1, runs=runs
             )
             
             # Destination directories and names of outputs
-            name_subject = subject_file.split("/")[-1].split("_TS")[0]
             output_dir_subject = os.path.join(output_dir,name_subject)
             if not os.path.exists(output_dir_subject):
                 os.mkdir(output_dir_subject)
@@ -63,7 +64,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
                 lags, mean_x2y, mean_y2x, 
                 error_i2o=sem_x2y, error_o2i=sem_y2x, 
                 save=name_subject_RCC_figure, dpi=300, 
-                series_names=(f'R({roi_i+1})', f'R({roi_j+1})')
+                series_names=(f'{roi_i+1}', f'{roi_j+1}'), scale=0.720
             )
             
 
@@ -80,7 +81,7 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
     TODO: Add output description.
     """
 
-    ROIs, split, skip = opts.rois, opts.split, opts.skip
+    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
     
     # Load time series from subject -- dims: subjects X time-points X total-ROIs
     time_series = np.array([np.genfromtxt(subject, delimiter='\t')[:,1:] for subject in subjects_files])
@@ -104,8 +105,8 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
             roi_j = ROIs[j]            
 
             # Run RCC on axis #0 (i.e., the subjects)
-            mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_statistics( # Dimensions: subjects X time-points
-                    TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False
+            mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_average( # Dimensions: subjects X time-points
+                    TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=0, runs=runs
             )
 
             # Destination names of outputs
@@ -117,7 +118,7 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
                 lags, mean_x2y, mean_y2x, 
                 error_i2o=sem_x2y, error_o2i=sem_y2x, 
                 save=name_roi_RCC_figure, dpi=300, 
-                series_names=(f'R({roi_i+1})', f'R({roi_j+1})')
+                series_names=(f'{roi_i+1}', f'{roi_j+1}'), scale=0.720
             )
 
 if __name__ == '__main__':

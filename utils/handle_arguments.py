@@ -20,8 +20,11 @@ def optional_arguments(main_parser):
     main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
     main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
     main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
-    main_parser.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
-    
+   
+    group = main_parser.add_mutually_exclusive_group()
+    group.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
+    group.add_argument('--runs', type=int, default=None, help="In the case of single subject, number of times to train the reservoir on a specific task")
+
     return main_parser
 
 def fmri_arguments(sub_parser):
@@ -41,8 +44,8 @@ def fmri_arguments(sub_parser):
     fmri.add_argument('--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Relative path pointing to the directory where the data is stored")
     fmri.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
     fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
-    fmri.add_argument('--split', type=int, default=75, help="Train-test split percentage as an integer from 0 to 100")
-    fmri.add_argument('--skip', type=int, default=20, help="Number of time points to skip when testing predictability")
+    fmri.add_argument('--split', type=int, default=100, help="Train-test split percentage as an integer from 0 to 100")
+    fmri.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
 
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
