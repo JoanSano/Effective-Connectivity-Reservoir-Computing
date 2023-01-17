@@ -40,7 +40,7 @@ def plot_RCC_input2output(lags, rho_i2o, rho_o2i, **kwargs):
     # Figures details
     ax1.set_ylabel(r"$\rho$", fontsize=15), ax1.set_xlabel(r"$\tau$", fontsize=15)
     ax1.spines["top"].set_visible(False), ax1.spines["right"].set_visible(False)
-    ax1.set_ylim([0,1]),ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(r"$\tau$"+"(ms)", fontsize=15)
+    ax1.set_ylim([0,1]),ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(r"$\tau$"+"(s)", fontsize=15)
     # Legend
     plt.legend(fontsize=8, loc='upper right')
     

@@ -46,6 +46,7 @@ def fmri_arguments(sub_parser):
     fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
     fmri.add_argument('--split', type=int, default=100, help="Train-test split percentage as an integer from 0 to 100. For batch training splits accross subjects; otherwise, accross time series length.")
     fmri.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
+    fmri.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
 
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 

@@ -21,19 +21,20 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     TODO: Add output description.
     """
 
-    name_subject = subject_file.split("/")[-1].split("_TS")[0]
+    length, ROIs, split, skip, runs = opts.length, opts.rois, opts.split, opts.skip, opts.runs
+    name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(length)
     print(f"Participant ID: {name_subject}")
-    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
     
     # Load time series from subject -- dims: time-points X total-ROIs
     time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:]
+    limit = int(time_series.shape[0]*0.01*length)
 
     # ROIs from input command
     ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
 
     # Time series to analyse
     TS2analyse = np.expand_dims(
-        np.array([time_series[:,roi] for roi in ROIs]), axis=1
+        np.array([time_series[:limit,roi] for roi in ROIs]), axis=1
     )
     
     # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
@@ -99,16 +100,17 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
     TODO: Add output description.
     """
 
-    ROIs, split, skip, runs = opts.rois, opts.split, opts.skip, opts.runs
+    length, ROIs, split, skip, runs = opts.length, opts.rois, opts.split, opts.skip, opts.runs
     
     # Load time series from subject -- dims: subjects X time-points X total-ROIs
     time_series = np.array([np.genfromtxt(subject, delimiter='\t')[:,1:] for subject in subjects_files])
+    limit = int(time_series.shape[1]*0.01*length)
 
     # ROIs from input command
     ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
 
     # Time series to analyse -- dims: ROIs X subjects X time-points
-    TS2analyse = np.array([time_series[...,roi] for roi in ROIs])
+    TS2analyse = np.array([time_series[:,:limit,roi] for roi in ROIs])
 
     # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
     lags = np.arange(-30,31)
