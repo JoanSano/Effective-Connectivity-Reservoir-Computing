@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import pandas as pd
 
 ## Relative imports
 from execution.RCC_utils import RCC_average
@@ -54,12 +55,29 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             
             # Destination directories and names of outputs
             output_dir_subject = os.path.join(output_dir,name_subject)
+            numerical = os.path.join(output_dir_subject,"Numerical")
+            figures = os.path.join(output_dir_subject,"Figures")
             if not os.path.exists(output_dir_subject):
                 os.mkdir(output_dir_subject)
+            if not os.path.exists(numerical):
+                os.mkdir(numerical)
+            if not os.path.exists(figures):
+                os.mkdir(figures)
             name_subject_RCC = name_subject + '_RCC_rois-' +str(roi_i+1) + 'vs' + str(roi_j+1)
-            name_subject_RCC_figure = os.path.join(output_dir_subject,name_subject_RCC+'.' + format)
+            name_subject_RCC_figure = os.path.join(figures, name_subject_RCC+'.' + format)
+            name_subject_RCC_numerical = os.path.join(numerical ,name_subject_RCC+'.tsv')
 
-            # Plot Causality  
+            # Save numerical results
+            results = pd.DataFrame({
+                "time-lags": lags,
+                str(roi_i+1) + '-->' + str(roi_j+1): mean_x2y,
+                str(roi_j+1) + '-->' + str(roi_i+1): mean_y2x,
+                'SEM' + str(roi_i+1) + '-->' + str(roi_j+1): sem_x2y,
+                'SEM' + str(roi_j+1) + '-->' + str(roi_i+1): sem_y2x
+            })
+            results.to_csv(name_subject_RCC_numerical, index=False, sep='\t', decimal='.')
+
+            # Plot Individual Causality  
             plot_RCC_input2output(
                 lags, mean_x2y, mean_y2x, 
                 error_i2o=sem_x2y, error_o2i=sem_y2x, 
