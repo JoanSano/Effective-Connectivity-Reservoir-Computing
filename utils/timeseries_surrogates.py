@@ -97,7 +97,7 @@ def AAFT_surrogates(original_data):
 
     return rescaled_data
 
-def refined_AAFT_surrogates(original_data, n_iterations, output="true_amplitudes"):
+def refined_AAFT_surrogates(original_data, n_iterations=100, output="true_amplitudes"):
     """
     Known as Iterative AAFT (IAAFT) in Lucio, et al. Phys. Rev. E. (2012).
     Return surrogates using the iteratively refined amplitude adjusted

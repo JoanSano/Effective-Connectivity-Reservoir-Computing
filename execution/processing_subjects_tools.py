@@ -5,9 +5,10 @@ import pandas as pd
 ## Relative imports
 from execution.RCC_utils import RCC_average
 from execution.reservoir_networks import return_reservoir_blocks
+from utils.timeseries_surrogates import refined_AAFT_surrogates
 from utils.plotting_utils import plot_RCC_input2output
 
-def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg'):
+def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg', N_surrogates=100):
     """
     TODO: Add description of the function
 
@@ -32,7 +33,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     # ROIs from input command
     ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
 
-    # Time series to analyse
+    # Time series to analyse -- dims: ROIs X 1 X time-points
     TS2analyse = np.expand_dims(
         np.array([time_series[:limit,roi] for roi in ROIs]), axis=1
     )
@@ -49,11 +50,22 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
         for j in range(i if run_self_loops else i+1, len(ROIs)):
             roi_j = ROIs[j]
             
-            # Run RCC on axis #1 (i.e., the time points)
+            # Run RCC by splitting on axis #1 (i.e., the time points)
             mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_average(
                 TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1, runs=runs
             )
-            
+
+            # IAAFT surrogates test
+            surrogate_x2y, surrogate_y2x = np.zeros((len(lags), N_surrogates)), np.zeros((len(lags), N_surrogates))
+            for surr in range(N_surrogates):
+                surrogate_i, surrogate_j = refined_AAFT_surrogates(TS2analyse[i]), refined_AAFT_surrogates(TS2analyse[i])
+                surrogate_x2y[:,surr], _, surrogate_y2x[:,surr], _, _, _ = RCC_average(
+                    surrogate_i, surrogate_j, lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1, runs=None
+                )
+            # TODO: Add zscores
+            mean_x2y, sem_x2y = np.mean(surrogate_x2y, axis=1), np.std(surrogate_x2y, axis=1)/np.sqrt(N_surrogates)
+            mean_y2x, sem_y2x = np.mean(surrogate_y2x, axis=1), np.std(surrogate_y2x, axis=1)/np.sqrt(N_surrogates)
+
             # Destination directories and names of outputs
             output_dir_subject = os.path.join(output_dir,name_subject)
             numerical = os.path.join(output_dir_subject,"Numerical")
@@ -87,7 +99,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             )
             
 
-def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config, format='svg'):
+def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config, format='svg', N_surrogates=100):
     """
     TODO: Add description of the function
 
@@ -124,10 +136,21 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
         for j in range(i if run_self_loops else i+1, len(ROIs)):
             roi_j = ROIs[j]            
 
-            # Run RCC on axis #0 (i.e., the subjects)
+            # Run RCC by splitting on axis #0 (i.e., the subjects)
             mean_x2y, sem_x2y, mean_y2x, sem_y2x, _, _ = RCC_average( # Dimensions: subjects X time-points
                     TS2analyse[i], TS2analyse[j], lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=0, runs=runs
             )
+
+            # IAAFT surrogates test
+            surrogate_x2y, surrogate_y2x = np.zeros((len(lags), N_surrogates)), np.zeros((len(lags), N_surrogates))
+            for surr in range(N_surrogates):
+                surrogate_i, surrogate_j = refined_AAFT_surrogates(TS2analyse[i]), refined_AAFT_surrogates(TS2analyse[i])
+                surrogate_x2y[:,surr], _, surrogate_y2x[:,surr], _, _, _ = RCC_average(
+                    surrogate_i, surrogate_j, lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1, runs=None
+                )
+            # TODO: Add zscore
+            mean_x2y, sem_x2y = np.mean(surrogate_x2y, axis=1), np.std(surrogate_x2y, axis=1)/np.sqrt(N_surrogates)
+            mean_y2x, sem_y2x = np.mean(surrogate_y2x, axis=1), np.std(surrogate_y2x, axis=1)/np.sqrt(N_surrogates)
 
             # Destination names of outputs
             name_roi_RCC = 'RCC_rois-' +str(roi_i+1) + 'vs' + str(roi_j+1)
