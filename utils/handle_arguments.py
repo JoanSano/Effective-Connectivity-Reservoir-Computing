@@ -14,7 +14,7 @@ def optional_arguments(main_parser):
     ------
     main_parser: (object) Includes the optional command line arguments stored as attributes
     """
-    
+     
     def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
     main_parser.add_argument('-rf','--r_folder', type=str, default=def_folder, help="Output directory where results will be stored")
     main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')

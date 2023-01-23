@@ -1,21 +1,21 @@
 import matplotlib.pylab as plt
 import numpy as np
 
-def plot_RCC_input2output(lags, rho_i2o, rho_o2i, **kwargs):
+def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     """
     TODO: Add description
+
+    Arguments
+    ---------
+    lags:
+    *to_plot: (dicts) where the keys ["data", "error", "label", "color", "style", "linewidth"]
     """
 
-    if 'series_names' in kwargs.keys():
-        X, Y = kwargs['series_names']
-    else:
-        X, Y = 'X', 'Y'
-
     # Location of the maximum correlation
+    decenter = .5
     if 'scale' in kwargs.keys():
         lags = lags * kwargs['scale'] # Repetition Time (TR)
-    max_i2o, max_o2i = lags[np.argmax(rho_o2i)], lags[np.argmax(rho_i2o)]
-    max_rho_i2o, max_rho_o2i = np.max(rho_o2i), np.max(rho_i2o)
+        decenter = decenter * kwargs['scale'] 
 
     # Instantiate figure
     fig, ax = plt.subplots(figsize=(6,4))
@@ -25,24 +25,27 @@ def plot_RCC_input2output(lags, rho_i2o, rho_o2i, **kwargs):
     left, bottom, width, height = [0.1, 0.12 , 0.85, 0.85]
     ax1 = fig.add_axes([left, bottom, width, height])
     # Plot main curves
-    ax1.plot(lags, rho_i2o, linewidth=2, color='blue', label=r'$\rho$'+f"[{X},{Y}]    "+X+r'$_{t}$'+' predicts '+Y+r'$_{t+\tau}$')
-    ax1.plot(lags, rho_o2i, linewidth=2, color='red',  label=r'$\rho$'+f"[{Y},{X}]    "+Y+r'$_{t}$'+' predicts '+X+r'$_{t+\tau}$')
-    ax1.vlines(x=0, ymin=max_rho_i2o-0.2, ymax=max_rho_i2o+0.05, linewidth=1, color='black', linestyles='--')
-    # Display statistic errors (if present)
-    if 'error_i2o' in kwargs.keys():
-        ax1.fill_between(lags, rho_i2o-kwargs['error_i2o'], rho_i2o+kwargs['error_i2o'],
-            alpha=0.2, edgecolor='blue', facecolor='blue',linewidth=1            
+    for curve in to_plot:    
+        ax1.plot(lags, curve["data"], curve["linewidth"], color=curve["color"], linestyle=curve["style"], label=curve["label"], alpha=curve["alpha"])
+        ax1.fill_between(lags, curve["data"]-curve["error"], curve["data"]+curve["error"],
+            alpha=0.2, edgecolor=curve["color"], facecolor=curve["color"], linewidth=1, label=""        
         )
-    if 'error_o2i' in kwargs.keys():
-        ax1.fill_between(lags, rho_o2i-kwargs['error_o2i'], rho_o2i+kwargs['error_o2i'],
-            alpha=0.2, edgecolor='red', facecolor='red',linewidth=1            
-        )
+    # Plot significant times: It requires 
+    if "significance_marks" in kwargs.keys():
+        y_ini = -0.01
+        for curve in kwargs["significance_marks"]:
+            ax1.fill_between(curve["data"]*(lags-decenter), y_ini, y_ini+0.02, alpha=0.8, facecolor=curve["color"], linewidth=0, label=curve["label"])
+            y_ini += 0.02
     # Figures details
-    ax1.set_ylabel(r"$\rho$", fontsize=15), ax1.set_xlabel(r"$\tau$", fontsize=15)
+    z_min, z_max = kwargs["limits"]
+    ax1.vlines(x=0, ymin=z_min, ymax=z_max, linewidth=0.3, color='grey', linestyles='--')
+    ax1.hlines(y=0, xmin=lags[0], xmax=lags[-1], linewidth=0.3, color='grey', linestyles='--')
     ax1.spines["top"].set_visible(False), ax1.spines["right"].set_visible(False)
-    ax1.set_ylim([0,1]),ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(r"$\tau$"+"(s)", fontsize=15)
+    ax1.set_ylabel(kwargs['y_label'], fontsize=15)
+    ax1.set_yticks([z_min,z_max]), ax1.set_yticklabels([str(z_min), str(z_max)]), ax1.set_ylim([z_min-0.01,z_max+0.02])
+    ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(kwargs['x_label'], fontsize=15)
     # Legend
-    plt.legend(fontsize=8, loc='upper right')
+    plt.legend(fontsize=8, frameon=False, ncols=2)
     
     ###############
     # Visualization

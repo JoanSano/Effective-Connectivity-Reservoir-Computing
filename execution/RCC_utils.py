@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import ttest_ind
 
 from utils.training_utils import input_output_lagged, split_train_test_reshape, prepare_data
 from execution.reservoir_networks import reservoir_network
@@ -63,7 +64,7 @@ def RCC(input, output, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0,
 
     return results_i2o, results_o2i
 
-def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, runs=None):
+def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, runs=None, average=False):
     """
     TODO: Add description
     """
@@ -73,7 +74,7 @@ def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, 
 
     # We extract the data
     if not runs:
-        Nsamples = x.shape[0]    
+        Nsamples = x.shape[0] 
     else:
         Nsamples = runs
     corr_x2y, corr_y2x, sem_x2y, sem_y2x = np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples))
@@ -82,10 +83,61 @@ def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, 
         corr_y2x[i] = results_y2x["predictability"][i]
 
     # Stats 
-    mean_x2y, sem_x2y = np.mean(corr_x2y, axis=1), np.std(corr_x2y, axis=1)/np.sqrt(Nsamples)
-    mean_y2x, sem_y2x = np.mean(corr_y2x, axis=1), np.std(corr_y2x, axis=1)/np.sqrt(Nsamples)
+    if average:
+        mean_x2y, sem_x2y = np.mean(corr_x2y, axis=1), np.std(corr_x2y, axis=1)/np.sqrt(Nsamples)
+        mean_y2x, sem_y2x = np.mean(corr_y2x, axis=1), np.std(corr_y2x, axis=1)/np.sqrt(Nsamples)
+        
+        return mean_x2y, sem_x2y, mean_y2x, sem_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
+    else:
+        return corr_x2y, corr_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
+
+def unidirectional_score_ij(p_i2j, p_j2i, p_delta_positive, p_delta_negative, lags):
+    """
+    TODO: Add description. ONeNote for reference.
+    """
+    Score_x2y = (lags<0)*(1-p_delta_negative)*(1-p_j2i) + (lags>0)*(1-p_delta_positive)*(1-p_i2j)
+    Score_y2x = (lags>0)*(1-p_delta_negative)*(1-p_j2i) + (lags<0)*(1-p_delta_positive)*(1-p_i2j)
+    return Score_x2y, Score_y2x
     
-    return mean_x2y, sem_x2y, mean_y2x, sem_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
-            
+def score_ij(p_i2j, p_j2i, p_delta):
+    """
+    TODO: Add description. ONeNote for reference.
+    """
+    return (1-p_i2j) * (1-p_j2i) * p_delta
+
+def directionality_test(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True):
+    """
+    TODO: Add description. ONeNote for reference.
+    """
+    
+    # Delta: Difference in predictability (McCracken & Weigel Phys. Rev. E. 2014)
+    Delta, Delta_surrogate = x2y - y2x, surrogate_x2y - surrogate_y2x
+    _, p_delta_positive = ttest_ind(Delta, Delta_surrogate, axis=axis, equal_var=False, permutations=permutations, alternative='greater')
+    _, p_delta_negative = ttest_ind(Delta, Delta_surrogate, axis=axis, equal_var=False, permutations=permutations, alternative='less')
+    _, p_delta = ttest_ind(Delta, Delta_surrogate, axis=axis, equal_var=False, permutations=permutations, alternative='two-sided')
+    
+    # Predictabilities are statistically significant
+    _, p_x2y = ttest_ind(x2y, surrogate_x2y, axis=axis, equal_var=False, permutations=permutations, alternative='greater')
+    _, p_y2x = ttest_ind(y2x, surrogate_y2x, axis=axis, equal_var=False, permutations=permutations, alternative='greater')
+    
+    # Causality Scores    
+    Score_x2y, Score_y2x = unidirectional_score_ij(p_x2y, p_y2x, p_delta_positive, p_delta_negative, lags)
+    Score_xy = score_ij(p_x2y, p_y2x, p_delta)
+    
+    # Statistical evidence: Compute the scores at the critical values (one-sided and two sided respectively)
+    if bonferroni:
+        # Num hypothesis is 3
+        threshold_uni, _ = unidirectional_score_ij(significance/2, significance/2, significance/2, significance/2, -1)
+        threshold_bi = score_ij(significance/3, significance/3, significance/(2*3))
+    else:
+        threshold_uni, _ = unidirectional_score_ij(significance, significance, significance, significance, -1)
+        threshold_bi = score_ij(significance, significance, significance/2)
+    print(threshold_bi, threshold_uni)
+    evidence_x2y = np.where(Score_x2y>=threshold_uni, 1, np.nan)
+    evidence_y2x = np.where(Score_y2x>=threshold_uni, 1, np.nan)
+    evidence_xy = np.where(Score_xy>=threshold_bi, 1, np.nan)
+
+    return evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x
+
 if __name__ == '__main__':
     pass
