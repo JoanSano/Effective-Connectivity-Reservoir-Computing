@@ -1,0 +1,1 @@
+python $SCRATCH/Files/GitRepos/$1/main_RCCausality.py --r_folder Results-Test_Single-subject --runs 10 fmri --rois 8 55 --subjects sub-101309_TS
