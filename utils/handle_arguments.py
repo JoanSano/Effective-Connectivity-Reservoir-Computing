@@ -130,7 +130,7 @@ def initialize_and_grep_files():
             f.write(arg+': '+str(val)+'\n')
 
     # Reservoir Architecture parameters file
-    json_config = os.path.abspath('./reservoir_config.json')
+    json_config = './reservoir_config.json'
     os.system(f"cp {json_config} {results_dir}")
 
     # Corresponding data files
