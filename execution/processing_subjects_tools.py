@@ -75,10 +75,6 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             mean_y2xs, sem_y2xs = np.mean(surrogate_y2x, axis=1), np.std(surrogate_y2x, axis=1) / np.sqrt(surrogate_y2x.shape[1])
 
             # RCC Scores
-            #score_stat, p_val = unidirectional_test(x2y, y2x, surrogate_x2y, surrogate_y2x, permutations=False)
-            #Unidirectional_Score = (1 - p_val) * score_stat / np.abs(score_stat)
-            #evidence_x2y = np.where((Unidirectional_Score>=0.975) & (lags<0) | (Unidirectional_Score<=-0.975) & (lags>0), 1, np.nan)
-            #evidence_y2x = np.where((Unidirectional_Score>=0.975) & (lags>0) | (Unidirectional_Score<=-0.975) & (lags<0), 1, np.nan)
             evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x = directionality_test(
                 x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True
             )
