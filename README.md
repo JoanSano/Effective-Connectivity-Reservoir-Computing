@@ -3,6 +3,7 @@ Start by creating a python environment and install the dependencies. Recomended 
 
 ```shell
 user@user:~/Repository$ conda create -n env-name python=3.10
+user@user:~/Repository$ conda activate env-name
 user@user:~/Repository$ pip install -r requirements.txt --no-cache-dir
 ```
 
