@@ -47,7 +47,7 @@ def fmri_arguments(sub_parser):
     """
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-    fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
+    fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="NOT IMPLEMENTED")
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
 
@@ -66,7 +66,7 @@ def logistic_arguments(sub_parser):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    logistic = sub_parser.add_parser('logistic', help="Anlysis of logistic time series to test the method")
+    logistic = sub_parser.add_parser('logistic', help="Anlysis of logistic time series to test the method; Use the flag [(-h,--help) HELP] to see optional inputs")
     logistic.add_argument('--generate', action='store_true', help="Generate logistic time series")
     logistic.add_argument('--num_points', type=int, default=250, help="Number of time points to generate")
     logistic.add_argument('--lags_x2y', type=int, default=[2], nargs='+', help="Lags where the causal relationship from x to y take place")
