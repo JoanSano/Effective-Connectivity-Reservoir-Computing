@@ -7,6 +7,7 @@ from execution.processing_subjects_tools import process_single_subject, process_
 def run_RCC():    
     # Loading the configurations and files with time series 
     opts, files, results_dir, json_config, timeseries_type = initialize_and_grep_files()
+
     
     if len(files) == 1:
         print("Single subject") 
@@ -20,6 +21,6 @@ def run_RCC():
         print("Multiple subjects with individual reservoir training") 
         print("====================================================")
         Parallel(n_jobs=opts.num_jobs)(delayed(process_single_subject)(f, opts, results_dir, json_config, format='png') for f in files)
-
+    
 if __name__ == '__main__':
     pass

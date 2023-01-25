@@ -20,10 +20,16 @@ def optional_arguments(main_parser):
     main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
     main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
     main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
+    main_parser.add_argument('--split', type=int, default=100, help="Train-test split percentage as an integer from 0 to 100. For batch training splits accross subjects; otherwise, accross time series length.")
+    main_parser.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
+    main_parser.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
+    main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
+    main_parser.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
+    main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
    
     group = main_parser.add_mutually_exclusive_group()
     group.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
-    group.add_argument('--runs', type=int, default=None, help="In the case of single subject training, number of times to train the reservoir on a specific task")
+    group.add_argument('--runs', type=int, default=5, help="In the case of single subject training, number of times to train the reservoir on a specific task")
 
     return main_parser
 
@@ -41,13 +47,7 @@ def fmri_arguments(sub_parser):
     """
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-    fmri.add_argument('--dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Relative path pointing to the directory where the data is stored")
-    fmri.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
-    fmri.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole brain analysis. Default is -1")
-    fmri.add_argument('--split', type=int, default=100, help="Train-test split percentage as an integer from 0 to 100. For batch training splits accross subjects; otherwise, accross time series length.")
-    fmri.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
-    fmri.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
-
+    fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
 
@@ -66,8 +66,16 @@ def logistic_arguments(sub_parser):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    logistic = sub_parser.add_parser('logistic', help="Ignore")
-    logistic.add_argument('-i', '--ignore', default=None, help="Ignore. this branch will include several features for the logistic time series")
+    logistic = sub_parser.add_parser('logistic', help="Anlysis of logistic time series to test the method")
+    logistic.add_argument('--generate', action='store_true', help="Generate logistic time series")
+    logistic.add_argument('--num_points', type=int, default=250, help="Number of time points to generate")
+    logistic.add_argument('--lags_x2y', type=int, default=[2], nargs='+', help="Lags where the causal relationship from x to y take place")
+    logistic.add_argument('--lags_y2x', type=int, default=None, nargs='+', help="Lags where the causal relationship from y to x take place")
+    logistic.add_argument('--c_x2y', type=int, default=[0.8], nargs='+', help="Strengths of the causal relationship from x to y take place")
+    logistic.add_argument('--c_y2x', type=int, default=None, nargs='+', help="Strengths of the causal relationship from y to x take place")
+    logistic.add_argument('--samples', type=int, default=10, help="Number of samples to generate - they will be treated as subjects")
+    logistic.add_argument('--noise', type=float, default=[0, 1], nargs='+', help="Coupling and Standard deviation of the white noise to be added")
+    logistic.add_argument('--convolve', type=int, default=None, help="Kernel size of the filter to convolve. If not specified no convolution will be applied.")
 
     # logistic positional argument is present
     logistic.set_defaults(func=lambda: 'logistic')
@@ -91,6 +99,10 @@ def handle_argumrnts():
     """
 
     parser = argparse.ArgumentParser("\nCompute Reservoir Computing Causality on time series.\nIn development.\n")
+    parser.add_argument('dir', type=str, default='./Datasets/HCP_motor-task_12-subjects', help="Relative path pointing to the directory where the data is stored and/or generated")
+
+    # Optional arguments -- Reservoir architecture and parameters
+    parser = optional_arguments(parser)
 
     ###########################################
     # Positional arguments (mutually exclusive) regarding which time series to analyse
@@ -98,16 +110,13 @@ def handle_argumrnts():
     timeseries = fmri_arguments(timeseries) # fMRI    
     timeseries = logistic_arguments(timeseries) # Logistic 
 
-    # Optional arguments -- Reservoir architecture and parameters
-    parser = optional_arguments(parser)    
-
     # Parse arguiments and extract the timeseries present in command line
     opts = parser.parse_args()
     try:
         timeseries_type = opts.func() 
         return opts, timeseries_type
     except:
-        print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic}")
+        print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic,...}")
         quit()
     
 def initialize_and_grep_files():
@@ -134,6 +143,9 @@ def initialize_and_grep_files():
     os.system(f"cp {json_config} {results_dir}")
 
     # Corresponding data files
+    if timeseries_type == 'logistic' and opts. generate:        
+        from utils.generate_logistic import generate_series
+        generate_series(opts)
     files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
 
     return opts, files, results_dir, json_config, timeseries_type

@@ -132,7 +132,7 @@ def directionality_test(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significan
     else:
         threshold_uni, _ = unidirectional_score_ij(significance, significance, significance, significance, -1)
         threshold_bi = score_ij(significance, significance, significance/2)
-    print(threshold_bi, threshold_uni)
+    
     evidence_x2y = np.where(Score_x2y>=threshold_uni, 1, np.nan)
     evidence_y2x = np.where(Score_y2x>=threshold_uni, 1, np.nan)
     evidence_xy = np.where(Score_xy>=threshold_bi, 1, np.nan)

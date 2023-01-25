@@ -9,7 +9,7 @@ from execution.reservoir_networks import return_reservoir_blocks
 from utils.timeseries_surrogates import refined_AAFT_surrogates
 from utils.plotting_utils import plot_RCC_Evidence
 
-def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg', N_surrogates=100):
+def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg'):
     """
     TODO: Add description of the function
 
@@ -23,7 +23,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     TODO: Add output description.
     """
 
-    length, ROIs, split, skip, runs = opts.length, opts.rois, opts.split, opts.skip, opts.runs
+    length, ROIs, split, skip, runs, N_surrogates = opts.length, opts.rois, opts.split, opts.skip, opts.runs, opts.num_surrogates
     name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(length)
     print(f"Participant ID: {name_subject}")
     
@@ -119,7 +119,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
                 {"data": mean_y2x, "error": sem_y2x, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)})", "color": "green", "style": "-", "linewidth": 1, "alpha": 1}, 
                 {"data": mean_x2ys, "error": sem_x2ys, "label": r"$\rho_{\tau}$"+f"({str(roi_i+1)},{str(roi_j+1)}"+r"$_{S}$"+")", "color": "bisque", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
                 {"data": mean_y2xs, "error": sem_y2xs, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)}"+r"$_{S}$"+")", "color": "lightgreen", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-                save=name_subject_RCC_figure, dpi=300, y_label="Scores", x_label=r"$\tau$"+"(s)", scale=0.720, limits=(0,1), 
+                save=name_subject_RCC_figure, dpi=300, y_label="Scores", x_label=r"$\tau$"+"(s)", limits=(0,1), #scale=0.720, 
                 significance_marks=[
                     {"data": evidence_x2y, "color": "blue", "label": x2ylabel},
                     {"data": evidence_y2x, "color": "red", "label": y2xlabel},

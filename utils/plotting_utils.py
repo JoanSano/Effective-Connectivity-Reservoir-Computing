@@ -12,10 +12,8 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     """
 
     # Location of the maximum correlation
-    decenter = .5
     if 'scale' in kwargs.keys():
         lags = lags * kwargs['scale'] # Repetition Time (TR)
-        decenter = decenter * kwargs['scale'] 
 
     # Instantiate figure
     fig, ax = plt.subplots(figsize=(6,4))
@@ -34,7 +32,7 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     if "significance_marks" in kwargs.keys():
         y_ini = -0.01
         for curve in kwargs["significance_marks"]:
-            ax1.fill_between(curve["data"]*(lags-decenter), y_ini, y_ini+0.02, alpha=0.8, facecolor=curve["color"], linewidth=0, label=curve["label"])
+            ax1.fill_between(curve["data"]*lags, y_ini, y_ini+0.02, alpha=0.8, facecolor=curve["color"], linewidth=0, label=curve["label"])
             y_ini += 0.02
     # Figures details
     z_min, z_max = kwargs["limits"]
