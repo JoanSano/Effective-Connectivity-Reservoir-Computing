@@ -2,7 +2,7 @@
     "Input_2_Node": {
         "layer_size": 20,
         "sparsity": 1,
-        "activation": "relu",
+        "activation": "logistic",
         "scaling": 1,
         "shift": 0,
         "bias_scaling": 1,
@@ -13,7 +13,7 @@
     "Node_2_Node": {
         "layer_size": 20,
         "sparsity": 0.75,
-        "activation": "relu",
+        "activation": "tanh",
         "spectral_radius": 1,
         "leakage": 1,
         "bidirectional": false,

@@ -74,20 +74,20 @@ def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, 
 
     # We extract the data
     if not runs:
-        Nsamples = x.shape[0] 
+        Nsamples = results_x2y["predictability"][0].shape[0] 
     else:
         Nsamples = runs
     corr_x2y, corr_y2x, sem_x2y, sem_y2x = np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples)), np.zeros((lags.shape[0], Nsamples))
     for i in range(lags.shape[0]):
         corr_x2y[i] = results_x2y["predictability"][i]
         corr_y2x[i] = results_y2x["predictability"][i]
-
+    
     # Stats 
     if average:
-        mean_x2y, sem_x2y = np.mean(corr_x2y, axis=1), np.std(corr_x2y, axis=1)/np.sqrt(Nsamples)
-        mean_y2x, sem_y2x = np.mean(corr_y2x, axis=1), np.std(corr_y2x, axis=1)/np.sqrt(Nsamples)
+        mean_x2y, mean_y2x = np.mean(corr_x2y, axis=1), np.mean(corr_y2x, axis=1)
+        sem_x2y, sem_y2x = np.std(corr_x2y, axis=1)/np.sqrt(Nsamples), np.std(corr_y2x, axis=1)/np.sqrt(Nsamples)
         
-        return mean_x2y, sem_x2y, mean_y2x, sem_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
+        return np.expand_dims(mean_x2y, axis=1), np.expand_dims( mean_y2x, axis=1), results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
     else:
         return corr_x2y, corr_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
 

@@ -115,7 +115,7 @@ def refined_AAFT_surrogates(original_data, n_iterations=100, output="true_amplit
     Outputs:
     ==============
     """
-
+    
     #  Get size of dimensions
     n_time = original_data.shape[1]
 

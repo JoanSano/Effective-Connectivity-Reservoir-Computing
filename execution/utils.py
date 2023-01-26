@@ -16,7 +16,8 @@ def run_RCC():
     elif opts.batch_analysis:
         print("Multiple subjects with batch reservoir training") 
         print("===============================================")
-        process_multiple_subjects(files, opts, results_dir, json_config, format='png')
+        # TODO: Implement k-fold CV
+        process_multiple_subjects(files, opts, results_dir, json_config, format='png', name_subject="sub-ignore")
     else:
         print("Multiple subjects with individual reservoir training") 
         print("====================================================")

@@ -47,21 +47,19 @@ def split_train_test_reshape(input, output, split, shuffle=False, axis=0):
         np.random.shuffle(indices)
         input, output = input[indices], output[indices]
 
-    if split == 100:
+    if split == 100 or split == 0:
         # No split. Train and test data are the same
         x_train = input
         y_train = output
 
         x_test = input
         y_test = output
-    elif split == -1: 
-        # 1-fold cross validation
-        x_train = input[:-1,...]
-        y_train = output[:-1,...]
-        # shape is kept as (1,T) for further compatibility
-        x_test = input[-1,...].reshape(1,-1)
-        y_test = output[-1,...].reshape(1,-1)
-    # TODO: implement k-fold cross validation
+    elif split <= -1: # k-fold cross validation
+        x_train = input[:split,...]
+        y_train = output[:split,...]
+        
+        x_test = input[split:,...]
+        y_test = output[split:,...]
     else:
         # Split data in train and test
         limit = int(output.shape[0]*0.01*split)

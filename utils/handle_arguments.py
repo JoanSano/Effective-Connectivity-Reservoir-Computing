@@ -20,7 +20,7 @@ def optional_arguments(main_parser):
     main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
     main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
     main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
-    main_parser.add_argument('--split', type=int, default=100, help="Train-test split percentage as an integer from 0 to 100. For batch training splits accross subjects; otherwise, accross time series length.")
+    main_parser.add_argument('--split', type=int, default=100, help="Train split percentage (int) from 0 to 100 (0 and 100 means no split). For batch training splits accross subjects; otherwise, accross time series length; k-fold CV specified by -k")
     main_parser.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
     main_parser.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
     main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
