@@ -1,0 +1,15 @@
+dir: Datasets/HCP_motor-task_12-subjects
+r_folder: Results_HCP-Dataset_Length-85
+num_jobs: 12
+blocks: vanilla
+num_blocks: None
+split: 70
+skip: 5
+length: 85
+subjects: ['-1']
+rois: [8, 43, 44, 55]
+num_surrogates: 100
+batch_analysis: False
+runs: 20
+deconvolve: [-1]
+func: <function fmri_arguments.<locals>.<lambda> at 0x14b1036b2050>

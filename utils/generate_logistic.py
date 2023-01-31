@@ -12,7 +12,7 @@ def generate_series(opts):
 
     for sample in range(1, opts.samples+1):
         x, y = [], []
-        x0, y0 = 0.1, 0.2
+        x0, y0 = np.random.rand()*0.5, np.random.rand()*0.5
         x.append(x0), y.append(y0)
 
         for i in range(1, opts.num_points):

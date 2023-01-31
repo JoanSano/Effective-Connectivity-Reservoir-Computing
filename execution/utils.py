@@ -7,7 +7,6 @@ from execution.processing_subjects_tools import process_single_subject, process_
 def run_RCC():    
     # Loading the configurations and files with time series 
     opts, files, results_dir, json_config, timeseries_type = initialize_and_grep_files()
-
     
     if len(files) == 1:
         print("Single subject") 

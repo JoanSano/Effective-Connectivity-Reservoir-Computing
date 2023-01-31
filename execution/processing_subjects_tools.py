@@ -97,7 +97,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             x2ylabel, y2xlabel = str(roi_i+1) + ' --> ' + str(roi_j+1), str(roi_j+1) + ' --> ' + str(roi_i+1)
             xylabel = str(roi_i+1) + ' <--> ' + str(roi_j+1)
             results = pd.DataFrame({
-                "time-lags": lags * 0.720,
+                "time-lags": lags,
                 "RCCS " + xylabel: Score_xy,
                 "RCCS " + x2ylabel: Score_x2y,
                 "RCCS " + y2xlabel: Score_y2x,
