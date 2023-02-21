@@ -28,8 +28,10 @@ def confusion_matrix_scores(GT_net, Pred_net, kwargs**):
 
     # TODO: Constrain to 1st neighbours --> normalise with respect to the number of real/direct connections
     if kwargs["Mask_N1"]:
+        # First neighbours flag
         pass
     elif kwargs["Mask_N2"]:
+        # Second neighbours flag
         pass
     else:
         pass
