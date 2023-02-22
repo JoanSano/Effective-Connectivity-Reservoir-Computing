@@ -87,9 +87,14 @@ directed_binary_networks = np.copy(directed_weighted_networks)
 ##########################
 # Performance evaluation #
 ##########################
+# Scores for each tested time lag
 sensitivity = np.zeros((len(length), len(subjects), N_lags))
 specificity = np.zeros((len(length), len(subjects), N_lags))
 pos_pred_value = np.zeros((len(length), len(subjects), N_lags))
+# Score that takes into account the overall lags
+global_sensitivity = np.zeros((len(length), len(subjects)))
+global_specificity = np.zeros((len(length), len(subjects)))
+global_pos_pred_value = np.zeros((len(length), len(subjects)))
 
 #######################
 # Population analysis #
@@ -99,26 +104,40 @@ for i, L in enumerate(lengths):
 
     for j, S in enumerate(subjects):
 
-        # Load Ground Truth
+        ### Load Ground Truth
+        #####################
         if "Logistic" in opts.population_folder:
-            GT = np.array([ # Customize the ground truth according to your simulations
-                [0,0.4],
-                [0.05,0]
-            ])
+            # Customize the ground truth according to your simulations ###
+            all_lags = True
+            if all_lags:
+                GT = np.array([ 
+                    [0,0.4],
+                    [0.05,0]
+                ])
+                Binary_GT = np.where(GT>0, 1, 0) # We binarize the network
+                Mask_N1 = np.copy(Binary_GT)     # We constrain to 1st neighbours. Measure performance only in direct connections
+            else:
+                GT = np.array([ 
+                    [0,0.4],
+                    [0,0]
+                ])
+                Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
+                Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
+
         elif "NetSim" in opts.population_folder:
             sim = 15
             gt_path = os.path.join(os.getcwd(), f"Datasets/Netsim/Sim-{sim}/Networks/{S}_sim-{sim}_Net.txt")
             GT = np.genfromtxt(gt_path, delimiter="\t")
-            GT += np.eye(GT.shape[0])   # The original diagonal is filled with -1s
-            Binary_GT = np.where(GT>0, 1, 0) # We binarize the network
-            Mask_N1 = Binary_GT + Binary_GT.T # We constrain to 1st neighbours. Measure performance only in direct connections
+            GT += np.eye(GT.shape[0])           # The original diagonal is filled with -1s
+            Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
+            Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
+
         else: 
             # HCP Data
             pass
-        print(Binary_GT)
-        print(Mask_N1)
-        quit()
 
+        ### Network reconstruction from RCC Scores
+        ##########################################
         for r, Rois in enumerate(rois):
             roi_x = int(Rois.split("-")[-1].split("vs")[0]) - 1
             roi_y = int(Rois.split("-")[-1].split("vs")[1]) - 1
@@ -141,14 +160,36 @@ for i, L in enumerate(lengths):
             evidence_xy = np.where(Score_xy>=threshold_bi, 1, 0)
 
             for t, tau in enumerate(lags):
-                # We only test for unidirectionality --> We don't consider bidirectional scores
+                ### We only test for unidirectionality --> We don't consider bidirectional scores
+                ######################################
                 directed_weighted_networks[j,t,roi_x,roi_y] = Score_x2y[t] # Score_xy[t] + Score_x2y[t] 
                 directed_weighted_networks[j,t,roi_y,roi_x] = Score_y2x[t] # Score_xy[t] + Score_y2x[t] 
                 directed_binary_networks[j,t,roi_x,roi_y] = evidence_x2y[t] # evidence_xy[t] + evidence_x2y[t]
                 directed_binary_networks[j,t,roi_y,roi_x] = evidence_y2x[t] # evidence_xy[t] + evidence_y2x[t]
                 
-                sensitivity[i,j,t], specificity[i,j,t], pos_pred_value[i,j,t] = confusion_matrix_scores(Binary_GT, directed_binary_networks[j,t])
+        ### Performance measure
+        #######################
+        # Lag specific
+        for t, tau in enumerate(lags):
+            # Masking to first neighbours (i.e., direct connections)
+            sensitivity[i,j,t], specificity[i,j,t], pos_pred_value[i,j,t] = confusion_matrix_scores(
+                Binary_GT, directed_binary_networks[j,t], Mask_N1=Mask_N1
+            )
+        # Overall predictions
+        # TODO: Think about how one can incorporate information from all time lags
+        global_sensitivity[i,j] = sensitivity[i,j,:].mean(axis=-1)
+        global_specificity[i,j] = specificity[i,j,:].mean(axis=-1)
+        global_pos_pred_value[i,j] = pos_pred_value[i,j,:].mean(axis=-1)
                 
-    plt.plot(np.where(lags!=0, lags,np.nan), sensitivity[i].mean(axis=0), label=f"Length: {L}%")
+###############
+### Figures ###
+###############
+for i, L in enumerate(lengths):
+    plt.plot(np.where(lags!=0, lags,np.nan), pos_pred_value[i].mean(axis=0), '-o', label=f"Length: {L}%")
 plt.legend()
 plt.show()
+
+""" for i, L in enumerate(lengths):
+    plt.plot(0, global_pos_pred_value[i].mean(), 'o', label=f"Length: {L}%")
+plt.legend()
+plt.show() """
