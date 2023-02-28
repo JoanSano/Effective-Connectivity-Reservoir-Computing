@@ -12,7 +12,7 @@ opts = parser.parse_args()
 
 dataset = opts.dir
 num_subjects = opts.num_subjects
-num_pairs = opts.num_paired_rois 
+num_pairs = int(opts.num_paired_rois * (opts.num_paired_rois - 1 ) // 2)
 correct_number = num_subjects * num_pairs
 print("=======================")
 print(f"Checking output of {dataset} Dataset.\nWith a total number of subjects {num_subjects} and {opts.num_paired_rois} ROIS.\nThe correct number of files per subject is {num_pairs}.\nThe total number of files in this dataset is {correct_number}:")

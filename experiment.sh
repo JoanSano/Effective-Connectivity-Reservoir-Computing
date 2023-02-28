@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-jobs="10"
+jobs="5"
 split="100"
 skip="10"
 
@@ -12,7 +12,7 @@ rois="-1"
 
 # Netsim
 data_dir="Datasets/Netsim/Sim-15/Timeseries"
-results_dir="Results_batch"$3"_Netsim-Sim-15_Split-"$split"_Length-"$length
+results_dir="Results_batch-"$3"_Netsim-Sim-15_Split-"$split"_Length-"$length
 python main_RCCausality.py $data_dir -rf $results_dir -j $jobs --split $split --skip $skip --length $length --subjects $subj --rois $rois --num_surrogates $surrogates --runs $runs fmri
 
 # Logistic
