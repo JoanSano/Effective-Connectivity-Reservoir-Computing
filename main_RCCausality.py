@@ -2,7 +2,7 @@
 from execution.utils import run_RCC, run_GC
 
 if __name__ == '__main__':
-    method = "GC"
+    method = "RCC"
     if method == "RCC":
         run_RCC()   
     elif method == "GC":
