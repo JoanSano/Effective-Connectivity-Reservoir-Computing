@@ -6,7 +6,7 @@ skip="10"
 
 folder_spec=$1
 length=$2
-subj=$3
+subj="${@:3}"
 runs="20"
 surrogates="100"
 rois="-1"

@@ -87,7 +87,7 @@ def RCC_average(x, y, lags, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, 
         mean_x2y, mean_y2x = np.mean(corr_x2y, axis=1), np.mean(corr_y2x, axis=1)
         sem_x2y, sem_y2x = np.std(corr_x2y, axis=1)/np.sqrt(Nsamples), np.std(corr_y2x, axis=1)/np.sqrt(Nsamples)
         
-        return np.expand_dims(mean_x2y, axis=1), np.expand_dims( mean_y2x, axis=1), results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
+        return np.expand_dims(mean_x2y, axis=1), np.expand_dims(mean_y2x, axis=1), results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
     else:
         return corr_x2y, corr_y2x, results_x2y.drop("predictability", axis=1), results_y2x.drop("predictability", axis=1)
 
