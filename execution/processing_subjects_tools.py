@@ -28,11 +28,13 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     print(f"Participant ID: {name_subject}")
     
     # Load time series from subject -- dims: time-points X total-ROIs
-    time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:] # First column is dropped due to Nan)
+    time_series = np.genfromtxt(subject_file, delimiter='\t')
+    if np.isnan(time_series[:,0]).all():
+        time_series = time_series[:,1:] # First column is dropped due to Nan
     limit = int(time_series.shape[0]*0.01*length)
 
     # ROIs from input command
-    ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
+    ROIs = list(rwange(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
 
     # Time series to analyse -- dims: ROIs X 1 X time-points
     TS2analyse = np.expand_dims(
@@ -145,6 +147,7 @@ def process_multiple_subjects(subjects_files, opts, output_dir, json_file_config
     if not name_subject:
         name_subject = subjects_files[-1].split("/")[-1].split("_TS")[0] + '_Length-' + str(length)
     # Load time series from subject -- dims: subjects X time-points X total-ROIs
+    # TODO: Add compatibility with files without NaNs in the first colum
     time_series = np.array([np.genfromtxt(subject, delimiter='\t')[:,1:] for subject in subjects_files])
     limit = int(time_series.shape[1]*0.01*length)
 
