@@ -34,7 +34,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     limit = int(time_series.shape[0]*0.01*length)
 
     # ROIs from input command
-    ROIs = list(rwange(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
+    ROIs = list(range(time_series.shape[-1])) if ROIs[0] == -1 else [roi-1 for roi in ROIs]
 
     # Time series to analyse -- dims: ROIs X 1 X time-points
     TS2analyse = np.expand_dims(
