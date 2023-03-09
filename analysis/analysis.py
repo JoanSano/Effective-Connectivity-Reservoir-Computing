@@ -13,11 +13,14 @@ from analysis_utils import *
 parser = argparse.ArgumentParser(f"\nPopulation analysis of Reservoir Computing Causality.\nOf course it needs a folder with the results of each subject in the population.")
 parser.add_argument('population_folder', type=str, help="Folder name of the population to analyse. It has to be located in the 'analysis' directory")
 parser.add_argument('figures_folder', type=str, help="Folder name where the figures and results will be stored")
-parser.add_argument('method', type=str, help="Method used to test directionality")
+parser.add_argument('--method', type=str, default="RCC", choices=["RCC", "GC", "other"], help="Method used to test directionality")
 parser.add_argument('--data_info', action='store_true', help="Display info about the structure of the dataset to analyse")
 parser.add_argument('--length', type=str, default='*', help="Input the length you want to include in the analysis")
 opts = parser.parse_args()
 opts.population_folder = os.path.join(os.getcwd(), "Results-to-Analyse", opts.population_folder)
+figures_dir = os.path.join(os.getcwd(), opts.figures_folder)
+if not os.path.exists(figures_dir):
+    os.mkdir(figures_dir)
 if opts.data_info:
     print("Dataset needs to be structured in the following way ['*' is the all character(s) wildcard]:",
 """
@@ -85,6 +88,9 @@ N_lags = len(results[databse[lengths[0]+"-"+subjects[0]+"_"+rois[0]]][:,0])
 ##########################
 # Performance evaluation #
 ##########################
+# Networks
+Weighted_nets = np.empty(shape=len(lengths), dtype=object)
+Binary_nets = np.empty(shape=len(lengths), dtype=object)
 # Scores for each tested time lag
 sensitivity = np.zeros((len(lengths), len(subjects), N_lags))
 specificity = np.zeros((len(lengths), len(subjects), N_lags))
@@ -199,67 +205,99 @@ for i, L in enumerate(lengths):
             false_positive_rate[i,j,t], true_positive_rate[i,j,t], auc[i,j,t] = roc_analysis(
                 Binary_GT, directed_weighted_networks[j,t], Mask_N1=Mask_N1
             )
+        Weighted_nets[i] = directed_weighted_networks
+        Binary_nets[i] = directed_binary_networks
+
         # Overall predictions
         # TODO: Think about how one can incorporate information from all time lags
         global_sensitivity[i,j] = sensitivity[i,j,:].mean(axis=-1)
         global_specificity[i,j] = specificity[i,j,:].mean(axis=-1)
         global_pos_pred_value[i,j] = pos_pred_value[i,j,:].mean(axis=-1)
-                
+
+        if which_lag == 9:
+            np.savetxt(figures_dir+"/L-"+str(i)+"auc_9.txt", auc[i], delimiter="\t")
+            np.savetxt(figures_dir+"/L-"+str(i)+"pos_pred_value_9.txt", pos_pred_value[i], delimiter="\t")
+            np.savetxt(figures_dir+"/L-"+str(i)+"sensitivity_9.txt", sensitivity[i], delimiter="\t")
+            np.savetxt(figures_dir+"/L-"+str(i)+"neg_pred_value_9.txt", neg_pred_value[i], delimiter="\t")
+            np.savetxt(figures_dir+"/L-"+str(i)+"specificity_9.txt", specificity[i], delimiter="\t")
+
+
 ###############
 ### Figures ###
 ###############
-figures_dir = os.path.join(os.getcwd(), opts.figures_folder)
-if not os.path.exists(figures_dir):
-    os.mkdir(figures_dir)
-style = "solid"
-limits = [(0.25,0.75), (0.25,0.75), (0,1), (0,1), (0.5,1)]
-colors = ["darkorange", "green", "blue", "red", "black"]
 
-auc_to_plot, ppv_to_plot, sensitivity_to_plot, npv_to_plot, specificity_to_plot = [], [], [], [], []
-for i, L in enumerate(lengths):
-    auc_to_plot.append(
-       {"data": auc[i].mean(axis=0), "error": auc[i].std(axis=0)/np.sqrt(len(subjects)), "label": L, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-    )
-    ppv_to_plot.append(
-       {"data": pos_pred_value[i].mean(axis=0), "error": pos_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": L, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-    )
-    sensitivity_to_plot.append(
-       {"data": sensitivity[i].mean(axis=0), "error": sensitivity[i].std(axis=0)/np.sqrt(len(subjects)), "label": L, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-    )
-    npv_to_plot.append(
-       {"data": neg_pred_value[i].mean(axis=0), "error": neg_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": L, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-    )
-    specificity_to_plot.append(
-       {"data": specificity[i].mean(axis=0), "error": specificity[i].std(axis=0)/np.sqrt(len(subjects)), "label": L, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-    )
+if "Logistic" in opts.population_folder and which_lag==2:
+    auc_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"auc_9.txt", delimiter="\t")
+    pos_pred_value_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"pos_pred_value_9.txt", delimiter="\t")
+    sensitivity_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"sensitivity_9.txt", delimiter="\t")
+    neg_pred_value_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"neg_pred_value_9.txt", delimiter="\t")
+    specificity_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"specificity_9.txt", delimiter="\t")
+
+    style = "solid"
+    limits = [(0,1), (0,1), (0,1), (0,1), (0,1)]
+    colors = ["darkorange", "green", "blue", "red", "black"]
+    fmt = "svg"
+    dpi = 500
+
+    auc_to_plot, ppv_to_plot, sensitivity_to_plot, npv_to_plot, specificity_to_plot = [], [], [], [], []
+    for i, L in enumerate(lengths):
+        # Data to plot the scores
+        auc_to_plot.extend([
+        {"data": auc[i].mean(axis=0), "error": auc[i].std(axis=0)/np.sqrt(len(subjects)), "label": r"Ground Truth $\tau=2$", "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+        {"data": auc_bis.mean(axis=0), "error": auc_bis.std(axis=0)/np.sqrt(len(subjects)), "label": r"Ground Truth $\tau=9$", "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
+        ])
+        ppv_to_plot.extend([
+        {"data": pos_pred_value[i].mean(axis=0), "error": pos_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+        {"data": pos_pred_value_bis.mean(axis=0), "error": pos_pred_value_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
+        ])
+        sensitivity_to_plot.extend([
+        {"data": sensitivity[i].mean(axis=0), "error": sensitivity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+        {"data": sensitivity_bis.mean(axis=0), "error": sensitivity_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
+        ])
+        npv_to_plot.extend([
+        {"data": neg_pred_value[i].mean(axis=0), "error": neg_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+        {"data": neg_pred_value_bis.mean(axis=0), "error": neg_pred_value_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
+        ])
+        specificity_to_plot.extend([
+        {"data": specificity[i].mean(axis=0), "error": specificity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+        {"data": specificity_bis.mean(axis=0), "error": specificity_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
+        ])
+
+        # Reconstructed networks visualization
+        GT2, GT9 = np.zeros((N_lags, nodes, nodes)), np.zeros((N_lags, nodes, nodes))
+        GT2[lags==-2,...] = np.array([[0,1], [0,0]])
+        GT2[lags==2,...] = np.array([[0,1], [0,0]])
+        GT9[lags==-9,...] = np.array([[0,0], [1,0]])
+        GT9[lags==9,...] = np.array([[0,0], [1,0]])
+        plot_logistic_networks(GT2, GT9, Weighted_nets[i], Binary_nets[i], np.where(lags!=0, lags,np.nan), [2,9], name=figures_dir+"/net_tau-2."+fmt, dpi=dpi)
 
 # AUC
 plot_RCC_Evidence(
     np.where(lags!=0, lags,np.nan),
     *auc_to_plot,
-    save=figures_dir+"/auc.png", dpi=300, y_label="AUC", x_label=r"$\tau$"+"(step)", limits=limits[0]
+    save=figures_dir+"/auc."+fmt, dpi=dpi, y_label="AUC", x_label=r"$\tau$"+"(step)", limits=limits[0]
 )
 # PPV
 plot_RCC_Evidence(
     np.where(lags!=0, lags,np.nan),
     *ppv_to_plot,
-    save=figures_dir+"/ppv.png", dpi=300, y_label="PPV", x_label=r"$\tau$"+"(step)", limits=limits[1]
+    save=figures_dir+"/ppv."+fmt, dpi=dpi, y_label="PPV", x_label=r"$\tau$"+"(step)", limits=limits[1]
 )
 # Sensitivity
 plot_RCC_Evidence(
     np.where(lags!=0, lags,np.nan),
     *sensitivity_to_plot,
-    save=figures_dir+"/sensitivity.png", dpi=300, y_label="Sensitivity", x_label=r"$\tau$"+"(step)", limits=limits[2]
+    save=figures_dir+"/sensitivity."+fmt, dpi=dpi, y_label="Sensitivity", x_label=r"$\tau$"+"(step)", limits=limits[2]
 )
 # NPV
 plot_RCC_Evidence(
     np.where(lags!=0, lags,np.nan),
     *npv_to_plot,
-    save=figures_dir+"/npv.png", dpi=300, y_label="NPV", x_label=r"$\tau$"+"(step)", limits=limits[3]
+    save=figures_dir+"/npv."+fmt, dpi=dpi, y_label="NPV", x_label=r"$\tau$"+"(step)", limits=limits[3]
 )
 # Specificity
 plot_RCC_Evidence(
     np.where(lags!=0, lags,np.nan),
     *specificity_to_plot,
-    save=figures_dir+"/specificity.png", dpi=300, y_label="Specificity", x_label=r"$\tau$"+"(step)", limits=limits[4]
+    save=figures_dir+"/specificity."+fmt, dpi=dpi, y_label="Specificity", x_label=r"$\tau$"+"(step)", limits=limits[4]
 )

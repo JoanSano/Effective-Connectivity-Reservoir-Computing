@@ -28,7 +28,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     print(f"Participant ID: {name_subject}")
     
     # Load time series from subject -- dims: time-points X total-ROIs
-    time_series = np.genfromtxt(subject_file, delimiter='\t')
+    time_series = np.genfromtxt(subject_file)# TODO: Add compatibility, delimiter='\t')
     if np.isnan(time_series[:,0]).all():
         time_series = time_series[:,1:] # First column is dropped due to Nan
     limit = int(time_series.shape[0]*0.01*length)

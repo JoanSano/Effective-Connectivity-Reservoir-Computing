@@ -2,7 +2,7 @@
     "Input_2_Node": {
         "layer_size": 50,
         "sparsity": 1,
-        "activation": "identity",
+        "activation": "logistic",
         "scaling": 1,
         "shift": 0,
         "bias_scaling": 1,

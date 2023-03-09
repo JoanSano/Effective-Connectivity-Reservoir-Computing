@@ -136,7 +136,7 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     ax1.set_yticks([z_min, 0.5*(z_min+z_max),z_max]), ax1.set_yticklabels([str(z_min), str(0.5*(z_min+z_max)), str(z_max)]), ax1.set_ylim([z_min-0.01,z_max+0.02])
     ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(kwargs['x_label'], fontsize=15)
     # Legend
-    #plt.legend(fontsize=8, frameon=False, ncols=2)
+    plt.legend(fontsize=8, frameon=False, ncols=1)
     
     ###############
     # Visualization
@@ -149,6 +149,82 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     else:
         plt.show()
     plt.close()
+
+def plot_logistic_networks(GT1, GT2, Weighted_nets, Binary_nets, lags, whichlags, name, dpi):
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax.remove()
+
+    gt1_inset = fig.add_axes([0.575,0.6,0.35,0.35])
+    import matplotlib.colors
+    cmap = matplotlib.colors.ListedColormap(['white', 'red'])
+    gt1_inset.imshow(GT1[lags==whichlags[0],...][0], vmin=0, vmax=1, cmap=cmap)
+    gt1_inset.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    gt1_inset.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    gt1_inset.set_xticks([0,1]), gt1_inset.set_yticks([0,1])
+    gt1_inset.set_xticklabels(["x","y"], fontsize=20), gt1_inset.set_yticklabels(["x","y"], fontsize=20)
+    gt1_inset.set_title(r"Target at $\tau=\pm 2$", fontweight="bold", fontsize=25)
+
+    gt2_inset = fig.add_axes([0.1,0.6,0.35,0.35])
+    gt2_inset.imshow(GT2[lags==whichlags[1],...][0], vmin=0, vmax=1, cmap='binary')
+    gt2_inset.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    gt2_inset.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    gt2_inset.set_xticks([0,1]), gt2_inset.set_yticks([0,1])
+    gt2_inset.set_xticklabels(["x","y"], fontsize=20), gt2_inset.set_yticklabels(["x","y"], fontsize=20)
+    gt2_inset.set_title(r"Target at $\tau=\pm 9$", fontweight="bold", fontsize=25)
+    
+    mse_gt1, mse_gt2 = [], []
+    for t in range(Binary_nets.shape[1]):
+        mse_gt1.append(((Binary_nets[:,t,...] - GT1[t,...])**2).mean())
+        mse_gt2.append(((Binary_nets[:,t,...] - GT2[t,...])**2).mean())
+    mean_net_1, mean_net_2 = np.zeros(Binary_nets.shape[2:]), np.zeros(Binary_nets.shape[2:])
+    mean_net_1 = np.mean(Binary_nets[:,lags==whichlags[0],...], axis=0)[0]
+    mean_net_2 = np.mean(Binary_nets[:,lags==whichlags[1],...], axis=0)[0]
+    
+    mse_inset = fig.add_axes([0.1,0.06,0.85,0.5])
+    mse_inset.set_ylim([-0.01,0.45]), mse_inset.set_xlim([lags[0], lags[-1]])
+    mse_inset.spines["top"].set_visible(False), mse_inset.spines["right"].set_visible(False)
+    mse_inset.set_ylabel("MSE", fontsize=20), mse_inset.set_xlabel(r"$\tau$ (step)", fontsize=20)
+    mse_inset.plot(lags, mse_gt2, color="black", linewidth=5)
+    mse_inset.plot(lags, mse_gt1, color="red", linewidth=2)
+    mse_inset.vlines(whichlags[0], ymin=0, ymax=0.20, colors='gray', linewidth=0.5, linestyle="--")
+    mse_inset.vlines(-whichlags[0], ymin=0, ymax=0.25, colors='gray', linewidth=0.5, linestyle="--")
+    mse_inset.vlines(whichlags[1], ymin=0, ymax=0.20, colors='gray', linewidth=0.5, linestyle="--")
+    mse_inset.vlines(-whichlags[1], ymin=0, ymax=0.35, colors='gray', linewidth=0.5, linestyle="--")
+    mse_inset.hlines(0, xmin=lags[0], xmax=lags[-1], colors='gray', linewidth=0.5, linestyle="--")
+
+    pred_neg_1 = fig.add_axes([0.44,0.41,0.15,0.15])
+    pred_neg_1.imshow(np.mean(Binary_nets[:,lags==-whichlags[0],...], axis=0)[0], vmin=0, vmax=1, cmap=cmap)
+    pred_neg_1.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    pred_neg_1.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    pred_neg_1.set_xticks([0,1]), pred_neg_1.set_yticks([0,1])
+    pred_neg_1.set_xticklabels(["x","y"], fontsize=10), pred_neg_1.set_yticklabels(["x","y"], fontsize=10)
+    pred_neg_1.set_title(r"$\tau=-2$", fontweight="bold", fontsize=15)
+
+    pred_neg_2 = fig.add_axes([0.175,0.35,0.15,0.15])
+    pred_neg_2.imshow(np.mean(Binary_nets[:,lags==-whichlags[1],...], axis=0)[0], vmin=0, vmax=1, cmap='binary')
+    pred_neg_2.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    pred_neg_2.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    pred_neg_2.set_xticks([0,1]), pred_neg_2.set_yticks([0,1])
+    pred_neg_2.set_xticklabels(["x","y"], fontsize=10), pred_neg_2.set_yticklabels(["x","y"], fontsize=10)
+    pred_neg_2.set_title(r"$\tau=-9$", fontweight="bold", fontsize=15)
+    
+    pred_pos_1 = fig.add_axes([0.63,0.37,0.15,0.15])
+    pred_pos_1.imshow(np.mean(Binary_nets[:,lags==whichlags[0],...], axis=0)[0], vmin=0, vmax=1, cmap=cmap)
+    pred_pos_1.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    pred_pos_1.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    pred_pos_1.set_xticks([0,1]), pred_pos_1.set_yticks([0,1])
+    pred_pos_1.set_xticklabels(["x","y"], fontsize=10), pred_pos_1.set_yticklabels(["x","y"], fontsize=10)
+    pred_pos_1.set_title(r"$\tau=2$", fontweight="bold", fontsize=15)
+
+    pred_pos_2 = fig.add_axes([0.80,0.24,0.15,0.15])
+    pred_pos_2.imshow(np.mean(Binary_nets[:,lags==whichlags[1],...], axis=0)[0], vmin=0, vmax=1, cmap='binary')
+    pred_pos_2.vlines(0.5, ymin=-0.5, ymax=1.5, colors='gray', linewidth=0.5)
+    pred_pos_2.hlines(0.5, xmin=-0.5, xmax=1.5, colors='gray', linewidth=0.5)
+    pred_pos_2.set_xticks([0,1]), pred_pos_2.set_yticks([0,1])
+    pred_pos_2.set_xticklabels(["x","y"], fontsize=10), pred_pos_2.set_yticklabels(["x","y"], fontsize=10)
+    pred_pos_2.set_title(r"$\tau=9$", fontweight="bold", fontsize=15)
+
+    plt.savefig(name, dpi=dpi)
 
 if __name__ == '__main__':
     pass
