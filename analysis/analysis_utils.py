@@ -176,9 +176,6 @@ def plot_logistic_networks(GT1, GT2, Weighted_nets, Binary_nets, lags, whichlags
     for t in range(Binary_nets.shape[1]):
         mse_gt1.append(((Binary_nets[:,t,...] - GT1[t,...])**2).mean())
         mse_gt2.append(((Binary_nets[:,t,...] - GT2[t,...])**2).mean())
-    mean_net_1, mean_net_2 = np.zeros(Binary_nets.shape[2:]), np.zeros(Binary_nets.shape[2:])
-    mean_net_1 = np.mean(Binary_nets[:,lags==whichlags[0],...], axis=0)[0]
-    mean_net_2 = np.mean(Binary_nets[:,lags==whichlags[1],...], axis=0)[0]
     
     mse_inset = fig.add_axes([0.1,0.06,0.85,0.5])
     mse_inset.set_ylim([-0.01,0.45]), mse_inset.set_xlim([lags[0], lags[-1]])
