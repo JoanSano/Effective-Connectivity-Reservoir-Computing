@@ -48,6 +48,7 @@ def fmri_arguments(sub_parser):
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
     fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="NOT IMPLEMENTED")
+    fmri.add_argument('--plots', type=str, default="true", choices=["true","false"], help="NOT IMPLEMENTED")
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
 
