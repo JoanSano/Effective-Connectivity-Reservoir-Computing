@@ -2,15 +2,15 @@ import os
 import shutil
 import argparse
 
-parser = argparse.ArgumentParser("\nCheck if the results for all subjects are present. Execute this script from the dataset folder.")
-parser.add_argument('--dir', type=str, default='Netsim', help="Name of the Dataset you want to check. default: Netsim")
+parser = argparse.ArgumentParser("\nCheck if the results for all subjects are present.")
+parser.add_argument('dir', type=str, help="Name of the Dataset you want to check. default: Netsim")
 parser.add_argument('--lengths', type=int, nargs='+', default=[80, 85, 90, 95, 100], help="List of lengths you want to check. default: 80, 85, 90, 95, 100")
 parser.add_argument('--num_subjects', type=int, default=50, help="Number of subjects in the dataset")
 parser.add_argument('--num_paired_rois', type=int, default=5, help="Number of paired rois in the dataset")
 parser.add_argument('--sim', type=str, default=None, help="In Netsim you need to specify the simulation unmber")
 opts = parser.parse_args()
 
-dataset = opts.dir
+dataset = os.path.join(os.getcwd(), opts.dir)
 num_subjects = opts.num_subjects
 num_pairs = int(opts.num_paired_rois * (opts.num_paired_rois - 1 ) // 2)
 correct_number = num_subjects * num_pairs
@@ -28,7 +28,7 @@ total = 0
 for length in opts.lengths:
     incomplete, complete = '', ''
     num_incomplete, total_L = 0, 0
-    length_dir = f"{os.getcwd()}/{dataset}-Dataset_Length-{length}/"
+    length_dir = f"{dataset}/Length-{length}/"
     for ID in os.listdir(length_dir):
         subject_ID = ID.split(".")[0].split("_")[0] 
         subject_ID = subject_ID if opts.sim is None else subject_ID + "_sim-" + opts.sim
