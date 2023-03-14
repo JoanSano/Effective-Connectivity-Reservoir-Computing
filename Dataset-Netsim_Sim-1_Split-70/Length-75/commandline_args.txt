@@ -1,0 +1,16 @@
+dir: Datasets/Netsim/Sim-1/Timeseries
+r_folder: Results_B-41to45_Netsim-Sim-1_Split-70_Length-75
+num_jobs: 5
+blocks: vanilla
+num_blocks: None
+split: 70
+skip: 10
+length: 75
+subjects: ['sub-41_sim-1_TS', 'sub-42_sim-1_TS', 'sub-43_sim-1_TS', 'sub-44_sim-1_TS', 'sub-45_sim-1_TS']
+rois: [-1]
+num_surrogates: 100
+batch_analysis: False
+runs: 20
+deconvolve: [-1]
+plots: false
+func: <function fmri_arguments.<locals>.<lambda> at 0x14df1a6ba0e0>
