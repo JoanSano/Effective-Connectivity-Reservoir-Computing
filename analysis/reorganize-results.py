@@ -4,6 +4,7 @@ import shutil
 # Execute this script from the main directory in the repository after running multiple subject jobs in a cluster
 path = os.getcwd()
 results_folders = [rf for rf in os.listdir(path) if os.path.isdir(os.path.join(path, rf)) and "Results" in rf]
+all_lengths = []
 for rf in results_folders:
     # Create the Dataset's root directory
     name = rf.split("_")[0] + "_" + "_".join(rf.split("_")[2:-1])
@@ -15,6 +16,7 @@ for rf in results_folders:
     length = os.path.join(name,rf.split("_")[-1])
     if not os.path.exists(length):
         os.mkdir(length)
+        all_lengths.append(length.split("-")[-1])
 
     # Copy subjects
     subjects = [sf for sf in os.listdir(rf) if os.path.isdir(os.path.join(rf, sf)) and "sub" in sf]
@@ -34,10 +36,12 @@ for rf in results_folders:
             os.system(f"mv {os.path.join(rf,cf)} {length}")
 
     # Final command to clean everything
-    #os.system(f"rm -rf {rf}")
+    os.system(f"rm -rf {rf}")
 
 # Execute the count-summary to know if the results are complete
 sim_number = input("Simulation number: \n")
+num_subjects = input("number of subjects: \n")
+num_paired_rois = input("Number of paired ROIs: \n")
 if sim_number == '':
     sim_number = None
-os.system(f"python analysis/count-files-summary.py {main_name} --lengths {all_lengths} --sim {sim_number}")
+os.system(f"python analysis/count-files-summary.py {main_name} --lengths {all_lengths} --num_subjects {num_subjects} -- num_paired_rois {num_paired_rois} --sim {sim_number}")

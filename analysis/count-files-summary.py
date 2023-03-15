@@ -3,7 +3,7 @@ import shutil
 import argparse
 
 parser = argparse.ArgumentParser("\nCheck if the results for all subjects are present.")
-parser.add_argument('dir', type=str, help="Name of the Dataset you want to check. default: Netsim")
+parser.add_argument('dir', type=str, help="Name of the Dataset you want to check")
 parser.add_argument('--lengths', type=int, nargs='+', default=[80, 85, 90, 95, 100], help="List of lengths you want to check. default: 80, 85, 90, 95, 100")
 parser.add_argument('--num_subjects', type=int, default=50, help="Number of subjects in the dataset")
 parser.add_argument('--num_paired_rois', type=int, default=5, help="Number of paired rois in the dataset")
