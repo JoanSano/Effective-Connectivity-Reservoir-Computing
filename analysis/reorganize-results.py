@@ -46,4 +46,4 @@ num_subjects = input("number of subjects: \n")
 num_paired_rois = input("Number of paired ROIs: \n")
 if sim_number == '':
     sim_number = None
-os.system(f"python analysis/count-files-summary.py {main_name} --lengths {all_lengths} --num_subjects {num_subjects} -- num_paired_rois {num_paired_rois} --sim {sim_number}")
+os.system(f"python analysis/count-files-summary.py {main_name} --lengths {all_lengths} --num_subjects {num_subjects} --num_paired_rois {num_paired_rois} --sim {sim_number}")
