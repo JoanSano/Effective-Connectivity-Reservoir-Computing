@@ -41,10 +41,10 @@ for length in opts.lengths:
                 num_incomplete += 1
             else:
                 files = os.listdir(directory)
+                total += len(files)
+                total_L += len(files)
                 if len(files) == num_pairs:
                     complete += subject_ID + '_TS '
-                    total += len(files)
-                    total_L += len(files)
                 else:
                     incomplete += subject_ID + '_TS '
                     num_incomplete += 1
