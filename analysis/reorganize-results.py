@@ -10,9 +10,9 @@ all_lengths = ""
 for rf in results_folders:
     # Create the Dataset's root directory
     name = rf.split("_")[0] + "_" + "_".join(rf.split("_")[2:-1])
+    main_name = name
     if not os.path.exists(name):
         os.mkdir(name)
-        main_name = name
 
     # Create Length directory
     length = os.path.join(name,rf.split("_")[-1])
@@ -23,7 +23,11 @@ for rf in results_folders:
     # Copy subjects
     subjects = [sf for sf in os.listdir(rf) if os.path.isdir(os.path.join(rf, sf)) and "sub" in sf]
     for sub in subjects:
-        os.system(f"mv {os.path.join(rf,sub)} {length}")
+        source = os.path.join(rf,sub)
+        if not os.path.exists(source):
+            os.system(f"mv {source} {length}")
+        else:
+            os.system(f"rsync -a {source} {length}")
     
     # Copy jsons - suposing all the batches were run with the same parameters
     jsons = [jf for jf in os.listdir(rf) if "json" in jf]
@@ -36,9 +40,6 @@ for rf in results_folders:
     for cf in command_args:
         if not os.path.exists(os.path.join(length,cf)):
             os.system(f"mv {os.path.join(rf,cf)} {length}")
-
-    # Final command to clean everything
-    os.system(f"rm -rf {rf}")
 
 # Execute the count-summary to know if the results are complete
 sim_number = input("Simulation number: \n")
