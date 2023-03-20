@@ -26,7 +26,7 @@ def optional_arguments(main_parser):
     main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
     main_parser.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
     main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
-    main_parser.add_argument('--lags', type=int, default=[-30,31], nargs='*', help="Extreme positive and negative lags")
+    main_parser.add_argument('--lags', type=int, default=[-30,31], nargs='+', help="Extreme positive and negative lags")
 
     group = main_parser.add_mutually_exclusive_group()
     group.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
