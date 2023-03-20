@@ -42,7 +42,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
     )
     
     # Lags and number of runs to test for a given subject (Note: the number of runs is not really super important in the absence of noise)
-    lags = np.arange(opts.lags[0],opts.lags[1])
+    lags = np.arange(opts.min_lag, opts.max_lag)
 
     # Initialization of the Reservoir blocks
     I2N, N2N = return_reservoir_blocks(json_file=json_file_config, exec_args=opts)
