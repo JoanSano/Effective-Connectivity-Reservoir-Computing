@@ -1,13 +1,5 @@
 ## Relative imports
-from execution.utils import run_RCC, run_GC
+from execution.utils import run_RCC
 
 if __name__ == '__main__':
-    method = "GC"
-    if method == "RCC":
-        run_RCC()   
-    elif method == "GC":
-        run_GC()   
-    elif method == "CCS":
-        raise NotImplementedError
-    else:
-        raise NotImplementedError
+    run_RCC()
