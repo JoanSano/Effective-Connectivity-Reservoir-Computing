@@ -4,8 +4,9 @@ import shutil
 # Execute this script from the main directory in the repository after running multiple subject jobs in a cluster
 
 results_specs = input("Simulation number and/or distinctive marker: \n")
+folder_keywords = input("Input the keyword(s) used to find the folders: \n")
 path = os.getcwd()
-results_folders = [rf for rf in os.listdir(path) if os.path.isdir(os.path.join(path, rf)) and "Results" in rf and results_specs in rf]
+results_folders = [rf for rf in os.listdir(path) if os.path.isdir(os.path.join(path, rf)) and folder_keywords in rf and results_specs in rf]
 all_lengths = ""
 for rf in results_folders:
     # Create the Dataset's root directory

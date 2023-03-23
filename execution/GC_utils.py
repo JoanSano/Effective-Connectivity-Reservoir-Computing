@@ -48,7 +48,7 @@ def GC_single_subject(subject_file, opts, output_dir, format='svg'):
     )
 
     # Lags to test; in this scenario, always negative
-    max_lag = 30
+    max_lag = np.abs(opts.max_lag)
     lags = np.arange(1,max_lag+1)
 
     # Compute GC causality
