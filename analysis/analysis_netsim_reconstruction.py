@@ -3,7 +3,7 @@ import os
 import glob
 import numpy as np
 import pandas as pd
-import matplotlib.pylab as plt
+import json
 
 # Relative imports
 from analysis_utils import *
@@ -16,6 +16,7 @@ parser.add_argument('figures_folder', type=str, help="Folder name where the figu
 parser.add_argument('--method', type=str, default="RCC", choices=["RCC", "GC", "other"], help="Method used to test directionality")
 parser.add_argument('--data_info', action='store_true', help="Display info about the structure of the dataset to analyse")
 parser.add_argument('--length', type=str, default='*', help="Input the length you want to include in the analysis")
+parser.add_argument('--simulation', type=int, default=15, help="Simulation number - used to obtain the ground truth")
 opts = parser.parse_args()
 opts.population_folder = os.path.join(os.getcwd(), "Results-to-Analyse", opts.population_folder)
 figures_dir = os.path.join(os.getcwd(), opts.figures_folder)
@@ -44,6 +45,8 @@ GitRepo
 """
     )
     quit()
+with open(f"Results-{opts.method}_arguments.txt", 'w') as f:
+    json.dump(opts.__dict__, f, indent=2)
 
 ################################################################
 # Get the results from all the population for all given length #
@@ -119,41 +122,12 @@ for i, L in enumerate(lengths):
 
         ### Load Ground Truth
         #####################
-        if "Logistic" in opts.population_folder:
-            # Customize the ground truth according to your simulations ###
-            which_lag = 2
-            if which_lag == 2:
-                GT = np.array([ 
-                    [0,0.4],
-                    [0,0]
-                ])
-                Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
-                Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
-            elif which_lag == 9:
-                GT = np.array([ 
-                    [0,0],
-                    [0.05,0]
-                ])
-                Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
-                Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
-            else:
-                GT = np.array([ 
-                    [0,0.4],
-                    [0.05,0]
-                ])
-                Binary_GT = np.where(GT>0, 1, 0) # We binarize the network
-                Mask_N1 = np.copy(Binary_GT)     # We constrain to 1st neighbours. Measure performance only in direct connections
-        elif "NetSim" in opts.population_folder:
-            sim = 15
-            gt_path = os.path.join(os.getcwd(), f"Datasets/Netsim/Sim-{sim}/Networks/{S}_sim-{sim}_Net.txt")
-            GT = np.genfromtxt(gt_path, delimiter="\t")
-            GT += np.eye(GT.shape[0])           # The original diagonal is filled with -1s
-            Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
-            Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
-
-        else: 
-            # HCP Data
-            pass
+        sim = opts.simulation
+        gt_path = os.path.join(os.getcwd(), f"Datasets/Netsim/Sim-{sim}/Networks/{S}_sim-{sim}_Net.txt")
+        GT = np.genfromtxt(gt_path, delimiter="\t")
+        GT += np.eye(GT.shape[0])           # The original diagonal is filled with -1s
+        Binary_GT = np.where(GT>0, 1, 0)    # We binarize the network
+        Mask_N1 = Binary_GT + Binary_GT.T   # We constrain to 1st neighbours. Measure performance only in direct connections
 
         ### Network reconstruction from RCC Scores
         ##########################################
@@ -214,62 +188,44 @@ for i, L in enumerate(lengths):
         global_specificity[i,j] = specificity[i,j,:].mean(axis=-1)
         global_pos_pred_value[i,j] = pos_pred_value[i,j,:].mean(axis=-1)
 
-        if which_lag == 9:
-            np.savetxt(figures_dir+"/L-"+str(i)+"auc_9.txt", auc[i], delimiter="\t")
-            np.savetxt(figures_dir+"/L-"+str(i)+"pos_pred_value_9.txt", pos_pred_value[i], delimiter="\t")
-            np.savetxt(figures_dir+"/L-"+str(i)+"sensitivity_9.txt", sensitivity[i], delimiter="\t")
-            np.savetxt(figures_dir+"/L-"+str(i)+"neg_pred_value_9.txt", neg_pred_value[i], delimiter="\t")
-            np.savetxt(figures_dir+"/L-"+str(i)+"specificity_9.txt", specificity[i], delimiter="\t")
-
-
 ###############
 ### Figures ###
 ###############
+style = "solid"
+limits = [(0,1), (0,1), (0,1), (0,1), (0,1)]
+colors = ["gold", "red", "darkorange", "green", "blue", "darkviolet", "black"]
+fmt = "svg"
+dpi = 500
 
-if "Logistic" in opts.population_folder and which_lag==2:
-    auc_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"auc_9.txt", delimiter="\t")
-    pos_pred_value_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"pos_pred_value_9.txt", delimiter="\t")
-    sensitivity_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"sensitivity_9.txt", delimiter="\t")
-    neg_pred_value_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"neg_pred_value_9.txt", delimiter="\t")
-    specificity_bis = np.genfromtxt(figures_dir+"/L-"+str(i)+"specificity_9.txt", delimiter="\t")
-
-    style = "solid"
-    limits = [(0,1), (0,1), (0,1), (0,1), (0,1)]
-    colors = ["darkorange", "green", "blue", "red", "black"]
-    fmt = "svg"
-    dpi = 500
-
-    auc_to_plot, ppv_to_plot, sensitivity_to_plot, npv_to_plot, specificity_to_plot = [], [], [], [], []
-    for i, L in enumerate(lengths):
-        # Data to plot the scores
-        auc_to_plot.extend([
-        {"data": auc[i].mean(axis=0), "error": auc[i].std(axis=0)/np.sqrt(len(subjects)), "label": r"Ground Truth $\tau=2$", "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-        {"data": auc_bis.mean(axis=0), "error": auc_bis.std(axis=0)/np.sqrt(len(subjects)), "label": r"Ground Truth $\tau=9$", "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
-        ])
-        ppv_to_plot.extend([
-        {"data": pos_pred_value[i].mean(axis=0), "error": pos_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-        {"data": pos_pred_value_bis.mean(axis=0), "error": pos_pred_value_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
-        ])
-        sensitivity_to_plot.extend([
-        {"data": sensitivity[i].mean(axis=0), "error": sensitivity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-        {"data": sensitivity_bis.mean(axis=0), "error": sensitivity_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
-        ])
-        npv_to_plot.extend([
-        {"data": neg_pred_value[i].mean(axis=0), "error": neg_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-        {"data": neg_pred_value_bis.mean(axis=0), "error": neg_pred_value_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
-        ])
-        specificity_to_plot.extend([
-        {"data": specificity[i].mean(axis=0), "error": specificity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-2], "style": style, "linewidth": 0.25, "alpha": 0.75},  
-        {"data": specificity_bis.mean(axis=0), "error": specificity_bis.std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[-1], "style": style, "linewidth": 0.25, "alpha": 0.75}  
-        ])
-
-        # Reconstructed networks visualization
-        GT2, GT9 = np.zeros((N_lags, nodes, nodes)), np.zeros((N_lags, nodes, nodes))
-        GT2[lags==-2,...] = np.array([[0,1], [0,0]])
-        GT2[lags==2,...] = np.array([[0,1], [0,0]])
-        GT9[lags==-9,...] = np.array([[0,0], [1,0]])
-        GT9[lags==9,...] = np.array([[0,0], [1,0]])
-        plot_logistic_networks(GT2, GT9, Weighted_nets[i], Binary_nets[i], np.where(lags!=0, lags,np.nan), [2,9], name=figures_dir+"/net_tau-2."+fmt, dpi=dpi)
+auc_to_plot, ppv_to_plot, sensitivity_to_plot, npv_to_plot, specificity_to_plot = [], [], [], [], []
+for i, L in enumerate(lengths):
+    # Save results
+    results = pd.DataFrame({
+                "time-lags": lags,
+                "PPV": pos_pred_value[i].mean(axis=0),
+                "NPV": neg_pred_value[i].mean(axis=0),
+                "AUC": auc[i].mean(axis=0),
+                "SEM-PPV": pos_pred_value[i].std(axis=0)/np.sqrt(len(subjects)),
+                "SEM-NPV": neg_pred_value[i].std(axis=0)/np.sqrt(len(subjects)),
+                "SEM-AUC": auc[i].std(axis=0)/np.sqrt(len(subjects)),
+            })
+    results.to_csv(f"Results-Metrics_Method-{opts.method}_Sim-{sim}_{L}.tsv", index=False, sep='\t', decimal='.')
+    # Data to plot the scores
+    auc_to_plot.extend([
+    {"data": auc[i].mean(axis=0), "error": auc[i].std(axis=0)/np.sqrt(len(subjects)), "label": f"L={L}%", "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+    ])
+    ppv_to_plot.extend([
+    {"data": pos_pred_value[i].mean(axis=0), "error": pos_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+    ])
+    sensitivity_to_plot.extend([
+    {"data": sensitivity[i].mean(axis=0), "error": sensitivity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+    ])
+    npv_to_plot.extend([
+    {"data": neg_pred_value[i].mean(axis=0), "error": neg_pred_value[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+    ])
+    specificity_to_plot.extend([
+    {"data": specificity[i].mean(axis=0), "error": specificity[i].std(axis=0)/np.sqrt(len(subjects)), "label": None, "color": colors[i], "style": style, "linewidth": 0.25, "alpha": 0.75},  
+    ])
 
 # AUC
 plot_RCC_Evidence(

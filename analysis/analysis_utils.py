@@ -116,8 +116,11 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
     left, bottom, width, height = [0.12, 0.12 , 0.85, 0.85]
     ax1 = fig.add_axes([left, bottom, width, height])
     # Plot main curves
-    for curve in to_plot:    
-        ax1.plot(lags, curve["data"], curve["linewidth"], color=curve["color"], linestyle=curve["style"], label=curve["label"], alpha=curve["alpha"])
+    for curve in to_plot:
+        if not curve["dots"]:
+            ax1.plot(lags, curve["data"], curve["linewidth"], color=curve["color"], linestyle=curve["style"], label=curve["label"], alpha=curve["alpha"])
+        else:
+            ax1.scatter(lags, curve["data"],  curve["linewidth"], marker='o', color=curve["color"], label=curve["label"], alpha=curve["alpha"])
         ax1.fill_between(lags, curve["data"]-curve["error"], curve["data"]+curve["error"],
             alpha=0.2, edgecolor=curve["color"], facecolor=curve["color"], linewidth=0        
         )
@@ -129,14 +132,14 @@ def plot_RCC_Evidence(lags, *to_plot, **kwargs):
             y_ini += 0.02
     # Figures details
     z_min, z_max = kwargs["limits"]
-    ax1.vlines(x=0, ymin=z_min, ymax=z_max, linewidth=0.3, color='grey', linestyles='--')
+    ax1.vlines(x=0, ymin=z_min, ymax=z_max, linewidth=0.5, color='grey', linestyles='--')
     ax1.hlines(y=0, xmin=lags[0], xmax=lags[-1], linewidth=0.3, color='grey', linestyles='--')
     ax1.spines["top"].set_visible(False), ax1.spines["right"].set_visible(False)
     ax1.set_ylabel(kwargs['y_label'], fontsize=15)
     ax1.set_yticks([z_min, 0.5*(z_min+z_max),z_max]), ax1.set_yticklabels([str(z_min), str(0.5*(z_min+z_max)), str(z_max)]), ax1.set_ylim([z_min-0.01,z_max+0.02])
     ax1.set_xlim([lags[0],lags[-1]]), ax1.set_xlabel(kwargs['x_label'], fontsize=15)
     # Legend
-    plt.legend(fontsize=8, frameon=False, ncols=1)
+    ax1.legend(fontsize=8, frameon=False, ncols=1)
     
     ###############
     # Visualization
