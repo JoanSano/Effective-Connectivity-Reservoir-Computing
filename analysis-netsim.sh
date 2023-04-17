@@ -6,7 +6,7 @@
 #python analysis/analysis_netsim_reconstruction.py Method-RCC_Netsim-Dataset_Sim-"$SIM"_Split-70 Results-Figures_Method-RCC_Netsim-Dataset_Sim-"$SIM"_Split-70 --method RCC --simulation $SIM
 #done
 
-python analysis/analysis_netsim_simulations.py --figs 3
+python analysis/analysis_netsim_simulations.py --figs 4
 
 #rm Results-RCC_arguments.txt Results-GC_arguments.txt 
 #rm Results-Metrics_Method*

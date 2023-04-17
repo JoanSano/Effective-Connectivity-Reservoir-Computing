@@ -35,7 +35,7 @@ SEM AUC                     6
 '''
 
 parser = argparse.ArgumentParser(f"\nPopulation analysis of Reservoir Computing Causality.\nOf course it needs a folder with the results of each subject in the population.")
-parser.add_argument('-f', '--figs', type=int, default=[1,2,3], nargs='+', help="Figures to plot")
+parser.add_argument('-f', '--figs', type=int, default=[1,2,3], nargs='+', help="Figures to plot - 0 to plot all")
 opts = parser.parse_args()
 
 def relative_increase(lags, x, y=None, max_lag=10, include_positive=False, delta_x=None, delta_y=None):
@@ -160,11 +160,11 @@ if __name__ == '__main__':
     ### Figure of length convergence for short lags
     limits = [(0,1), (0,1), (0,1), (0,1), (0,1)]
     colors = ["gold", "red", "darkorange", "green", "blue", "darkviolet", "black"]
-    fmt = "svg"
+    fmt = "png"
     dpi = 500
-    figs_to_do = opts.figs
+    figs_to_do = opts.figs 
 
-    if 1 in figs_to_do:
+    if (1 or 0) in figs_to_do:
         fig, ax = plt.subplots(figsize=(10,4))
         ax.remove()
         left, bottom, width, height = [0.06, 0.12 , 0.2, 0.8]
@@ -258,7 +258,7 @@ if __name__ == '__main__':
             plt.savefig(folder+"/Method-RCC_Length-Convergence_Selected-Tau."+fmt, dpi=dpi, format=fmt)
 
     ### Figure of length convergence for all lags
-    if 2 in figs_to_do:
+    if (2 or 0) in figs_to_do:
         from analysis_utils import plot_RCC_Evidence
         colors = ["gold", "red", "green", "blue", "black"]
         rho_to_plot, pval_to_plot = [], []
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
     ### Explicit figure of RCC vs GC
     colors = ["red", "green", "blue"]
-    if 3 in figs_to_do:
+    if (3 or 0) in figs_to_do:
         fig, ax = plt.subplots(figsize=(10,20))
         ax.remove()
         
@@ -472,3 +472,182 @@ if __name__ == '__main__':
         ax_bis.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
 
         plt.savefig(folder+"/Comparison_RCCvsGC."+fmt, dpi=dpi, format=fmt)
+
+    ### Comparison of RCC in positive and negative lags
+    if (4 or 0) in figs_to_do:
+        fig, ax = plt.subplots(figsize=(10,20))
+        ax.remove()
+        
+        ## SIM 1
+        plt.gcf().text(0.41, 0.98, "Sim 1", fontsize=30, fontweight="bold")
+        left, bottom, width, height = [0.06, 0.825 , 0.425, 0.15]
+        ax1 = fig.add_axes([left, bottom, width, height])
+        ax1.spines["top"].set_visible(False), ax1.spines["right"].set_visible(False)    
+        yticks, space = [], 0.15
+        for pp in range(1,4):
+            label_neg = r"$\tau<0$" if pp==3 else None
+            label_pos = r"$\tau>0$" if pp==3 else None
+            ax1.plot(np.where(lags<0, lags, np.nan), np.where(lags<0, results_RCC[0][-1][:,pp]-space*(1-pp), np.nan), linestyle='solid', linewidth=2, color=colors[pp-1], label=label_neg)
+            ax1.plot(np.where(lags<0, lags, np.nan), np.flip(np.where(lags>0, results_RCC[0][-1][:,pp]-space*(1-pp), np.nan)), linestyle='dashed', linewidth=2, color=colors[pp-1], label=label_pos)
+            ax1.hlines(y=space*(pp-1)+0.5, xmin=lags[0], xmax=0, color="black", linestyle='dotted', linewidth=1)
+            yticks.append(space*(pp-1)+0.5)
+        ax1.set_yticks(yticks), ax1.set_yticklabels(["PPV=0.5","NPV=0.5","AUC=0.5"], rotation=70, va="center", fontsize=15)
+        ax1.set_xticks(range(-30,1,5)), ax1.set_xticklabels(np.abs(range(-30,1,5)))
+        ax1.legend(frameon=True, fontsize=15, ncols=2, bbox_to_anchor=(0.55, 0.675, 0.2, 0.5))
+        ax1.get_legend().legend_handles[0].set_color('black'), ax1.get_legend().legend_handles[1].set_color('black')
+        ax1.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15)
+
+        left, bottom, width, height = [0.55, 0.825 , 0.425, 0.15]
+        ax2 = fig.add_axes([left, bottom, width, height])
+        ax2.spines["top"].set_visible(False), ax2.spines["right"].set_visible(False)    
+        labels, max_lag, space_x = ["PPV", "NPV", "AUC"], 5, 0.2
+        for pp in range(1,4):
+            cut_lag, rel_increase, error, significance = relative_increase(
+                lags[lags<0], results_RCC[0][-1][:,pp][lags<0], y=np.flip(results_RCC[0][-1][:,pp][lags>0]), max_lag=max_lag, include_positive=False,
+                delta_x=results_RCC[0][-1][:,pp+3][lags<0], delta_y=np.flip(results_RCC[0][-1][:,pp+3][lags>0])
+            )
+            h_data = cut_lag + (2 - pp) * space_x
+            ax2.plot(h_data, rel_increase, 'o-', linewidth=0.8, color=colors[pp-1], label=labels[pp-1], markersize=10, alpha=0.5)
+            ax2.errorbar(h_data, rel_increase, yerr=error, ecolor=colors[pp-1], capsize=5, fmt='none')
+            for sm, s_mark in enumerate(significance):
+                ax2.text(h_data[sm]-0.065, rel_increase[sm] + error[sm] + 3.5, s_mark, fontsize=15, fontweight="bold", rotation='vertical')
+        ax2.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
+        ax2.set_xticks(cut_lag), ax2.set_xticklabels(np.abs(cut_lag)), ax2.set_ylim([-10,100])
+        ax2.legend(frameon=True, fontsize=15, ncols=3, bbox_to_anchor=(0.85, 0.675, 0.2, 0.5))
+        ax2.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15), ax2.set_ylabel("Relative Increase (%)", fontsize=15)
+
+        ## SIM 7
+        plt.gcf().text(0.45, 0.78, "Sim 7", fontsize=30, fontweight="bold")
+        left, bottom, width, height = [0.06, 0.625 , 0.425, 0.15]
+        ax3 = fig.add_axes([left, bottom, width, height])
+        ax3.spines["top"].set_visible(False), ax3.spines["right"].set_visible(False)
+        yticks, space = [], 0.5
+        for pp in range(1,4):
+            ax3.plot(np.where(results_RCC[1][-1][:,0]<0, results_RCC[1][-1][:,0], np.nan), np.where(results_RCC[1][-1][:,0]<0, results_RCC[1][-1][:,pp]-space*(1-pp), np.nan), linestyle='solid', linewidth=2, color=colors[pp-1])
+            ax3.plot(np.where(results_RCC[1][-1][1:,0]<0, results_RCC[1][-1][1:,0], np.nan), np.flip(np.where(results_RCC[1][-1][1:,0]>0, results_RCC[1][-1][1:,pp]-space*(1-pp), np.nan)), linestyle='dashed', linewidth=2, color=colors[pp-1])
+            ax3.hlines(y=space*(pp-1)+0.5, xmin=results_RCC[1][-1][0,0], xmax=0, color="black", linestyle='dotted', linewidth=1)
+            yticks.append(space*(pp-1)+0.5)
+        ax3.set_yticks(yticks), ax3.set_yticklabels(["PPV=0.5","NPV=0.5","AUC=0.5"], rotation=75, va="center", fontsize=15)
+        ax3.set_xticks(np.where(results_RCC[1][-1][:,0]<0, results_RCC[1][-1][:,0], np.nan))
+        ax3.set_xticklabels(np.abs(np.where(results_RCC[1][-1][:,0]<0, results_RCC[1][-1][:,0], np.nan)))
+        ax3.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15)
+
+        left, bottom, width, height = [0.55, 0.625 , 0.425, 0.15]
+        ax4 = fig.add_axes([left, bottom, width, height])
+        ax4.spines["top"].set_visible(False), ax4.spines["right"].set_visible(False)    
+        max_lag, space_x = 5, 0.2
+        for pp in range(1,4):
+            cut_lag, rel_increase, error, significance = relative_increase(
+                results_RCC[1][-1][1:,0][results_RCC[1][-1][1:,0]<0], results_RCC[1][-1][1:,pp][results_RCC[1][-1][1:,0]<0], y=np.flip(results_RCC[1][-1][:,pp][results_RCC[1][-1][:,0]>0]),
+                max_lag=max_lag, include_positive=False,
+                delta_x=results_RCC[1][-1][1:,pp+3][results_RCC[1][-1][1:,0]<0], delta_y=np.flip(results_RCC[1][-1][:,pp+3][results_RCC[1][-1][:,0]>0])
+            )
+            h_data = cut_lag + (2 - pp) * space_x
+            ax4.plot(h_data, rel_increase, 'o-', linewidth=0.8, color=colors[pp-1], markersize=10, alpha=0.5)
+            ax4.errorbar(h_data, rel_increase, yerr=error, ecolor=colors[pp-1], capsize=5, fmt='none')
+            for sm, s_mark in enumerate(significance):
+                ax4.text(h_data[sm]-0.065, rel_increase[sm] + error[sm] + 3.5, s_mark, fontsize=15, fontweight="bold", rotation='vertical')
+        ax4.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
+        ax4.set_xticks(cut_lag), ax4.set_xticklabels(np.abs(cut_lag)), ax4.set_ylim([-10,90])
+        ax4.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15), ax4.set_ylabel("Relative Increase (%)", fontsize=15)
+
+        ## SIM 15
+        plt.gcf().text(0.45, 0.58, "Sim 15", fontsize=30, fontweight="bold")
+        left, bottom, width, height = [0.06, 0.425 , 0.425, 0.15]
+        ax5 = fig.add_axes([left, bottom, width, height])
+        ax5.spines["top"].set_visible(False), ax5.spines["right"].set_visible(False)
+        yticks, space = [], 0.2
+        for pp in range(1,4):
+            ax5.plot(np.where(lags<0, lags, np.nan), np.where(lags<0, results_RCC[2][-1][:,pp]-space*(1-pp), np.nan), linestyle='solid', linewidth=2, color=colors[pp-1])
+            ax5.plot(np.where(lags<0, lags, np.nan), np.flip(np.where(lags>0, results_RCC[2][-1][:,pp]-space*(1-pp), np.nan)), linestyle='dashed', linewidth=2, color=colors[pp-1])
+            ax5.hlines(y=space*(pp-1)+0.5, xmin=lags[0], xmax=0, color="black", linestyle='dotted', linewidth=1)
+            yticks.append(space*(pp-1)+0.5)
+        ax5.set_yticks(yticks), ax5.set_yticklabels(["PPV=0.5","NPV=0.5","AUC=0.5"], rotation=70, va="center", fontsize=15)
+        ax5.set_xticks(range(-30,1,5)), ax5.set_xticklabels(np.abs(range(-30,1,5)))
+        ax5.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15)
+
+        left, bottom, width, height = [0.55, 0.425 , 0.425, 0.15]
+        ax6 = fig.add_axes([left, bottom, width, height])
+        ax6.spines["top"].set_visible(False), ax6.spines["right"].set_visible(False)    
+        max_lag, space_x = 5, 0.2
+        for pp in range(1,4):
+            cut_lag, rel_increase, error, significance = relative_increase(
+                lags[lags<0], results_RCC[2][-1][:,pp][lags<0], y=np.flip(results_RCC[2][-1][:,pp][lags>0]), max_lag=max_lag, include_positive=False,
+                delta_x=results_RCC[2][-1][:,pp+3][lags<0], delta_y=np.flip(results_RCC[2][-1][:,pp+3][lags>0])
+            )
+            h_data = cut_lag + (2 - pp) * space_x
+            ax6.plot(h_data, rel_increase, 'o-', linewidth=0.8, color=colors[pp-1], markersize=10, alpha=0.5)
+            ax6.errorbar(h_data, rel_increase, yerr=error, ecolor=colors[pp-1], capsize=5, fmt='none')
+            for sm, s_mark in enumerate(significance):
+                ax6.text(h_data[sm]-0.065, rel_increase[sm] + error[sm] + 3.5, s_mark, fontsize=15, fontweight="bold", rotation='vertical')
+        ax6.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
+        ax6.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15), ax6.set_ylabel("Relative Increase (%)", fontsize=15)
+
+        ## SIM 19
+        plt.gcf().text(0.45, 0.38, "Sim 19", fontsize=30, fontweight="bold")
+        left, bottom, width, height = [0.06, 0.225 , 0.425, 0.15]
+        ax7 = fig.add_axes([left, bottom, width, height])
+        ax7.spines["top"].set_visible(False), ax7.spines["right"].set_visible(False)
+        yticks, space = [], 0.7
+        for pp in range(1,4):
+            ax7.plot(np.where(lags<0, lags, np.nan), np.where(lags<0, results_RCC[3][-1][:,pp]-space*(1-pp), np.nan), linestyle='solid', linewidth=2, color=colors[pp-1])
+            ax7.plot(np.where(lags<0, lags, np.nan), np.flip(np.where(lags>0, results_RCC[3][-1][:,pp]-space*(1-pp), np.nan)), linestyle='dashed', linewidth=2, color=colors[pp-1])
+            ax7.hlines(y=space*(pp-1)+0.5, xmin=lags[0], xmax=0, color="black", linestyle='dotted', linewidth=1)
+            yticks.append(space*(pp-1)+0.5)
+        ax7.set_yticks(yticks), ax7.set_yticklabels(["PPV=0.5","NPV=0.5","AUC=0.5"], rotation=70, va="center", fontsize=15)
+        ax7.set_xticks(range(-30,1,5)), ax7.set_xticklabels(np.abs(range(-30,1,5)))
+        ax7.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15)
+
+        left, bottom, width, height = [0.55, 0.225 , 0.425, 0.15]
+        ax8 = fig.add_axes([left, bottom, width, height])
+        ax8.spines["top"].set_visible(False), ax8.spines["right"].set_visible(False)    
+        max_lag, space_x = 5, 0.2
+        for pp in range(1,4):
+            cut_lag, rel_increase, error, significance = relative_increase(
+                lags[lags<0], results_RCC[3][-1][:,pp][lags<0], y=results_RCC[3][-1][:,pp][lags>0], max_lag=max_lag, include_positive=False,
+                delta_x=results_RCC[3][-1][:,pp+3][lags<0], delta_y=results_RCC[3][-1][:,pp+3][lags>0]
+            )
+            h_data = cut_lag + (2 - pp) * space_x
+            ax8.plot(h_data, np.where(rel_increase<200,rel_increase,np.nan), 'o-', linewidth=0.8, color=colors[pp-1], markersize=10, alpha=0.5)
+            ax8.errorbar(h_data, rel_increase, yerr=np.where(error<100,error,np.nan), ecolor=colors[pp-1], capsize=5, fmt='none')
+            for sm, s_mark in enumerate(significance):
+                if sm != (len(significance)-1):
+                    ax8.text(h_data[sm]-0.065, rel_increase[sm] + error[sm] + 3.5, s_mark, fontsize=15, fontweight="bold", rotation='vertical')
+        ax8.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
+        ax8.set_xticks(cut_lag), ax8.set_xticklabels(np.abs(cut_lag)), ax8.set_ylim([-40,40])
+        ax8.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15), ax8.set_ylabel("Relative Increase (%)", fontsize=15)
+
+        ## SIM 28
+        plt.gcf().text(0.45, 0.19, "Sim 28", fontsize=30, fontweight="bold")
+        left, bottom, width, height = [0.06, 0.025 , 0.425, 0.15]
+        ax9 = fig.add_axes([left, bottom, width, height])
+        ax9.spines["top"].set_visible(False), ax9.spines["right"].set_visible(False)
+        yticks, space = [], 0.2
+        for pp in range(1,4):
+            ax9.plot(np.where(lags<0, lags, np.nan), np.where(lags<0, results_RCC[4][-1][:,pp]-space*(1-pp), np.nan), linestyle='solid', linewidth=2, color=colors[pp-1])
+            ax9.plot(np.where(lags<0, lags, np.nan), np.flip(np.where(lags>0, results_RCC[4][-1][:,pp]-space*(1-pp), np.nan)), linestyle='dashed', linewidth=2, color=colors[pp-1])
+            ax9.hlines(y=space*(pp-1)+0.5, xmin=lags[0], xmax=0, color="black", linestyle='dotted', linewidth=1)
+            yticks.append(space*(pp-1)+0.5)
+        ax9.set_yticks(yticks), ax9.set_yticklabels(["PPV=0.5","NPV=0.5","AUC=0.5"], rotation=70, va="center", fontsize=15)
+        ax9.set_xticks(range(-30,1,5)), ax9.set_xticklabels(np.abs(range(-30,1,5)))
+        ax9.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15)
+
+        left, bottom, width, height = [0.55, 0.025 , 0.4, 0.15]
+        ax9 = fig.add_axes([left, bottom, width, height])
+        ax9.spines["top"].set_visible(False), ax9.spines["right"].set_visible(False)  
+        labels, max_lag, space_x = ["PPV", "NPV", "AUC"], 5, 0.2
+        for pp in range(1,4):
+            cut_lag, rel_increase, error, significance = relative_increase(
+                lags[lags<0], results_RCC[4][-1][:,pp][lags<0], y=np.flip(results_RCC[4][-1][:,pp][lags>0]), max_lag=max_lag, include_positive=False,
+                delta_x=results_RCC[4][-1][:,pp+3][lags<0], delta_y=np.flip(results_RCC[4][-1][:,pp+3][lags>0])
+            )
+            h_data = cut_lag + (2 - pp) * space_x
+            ax9.plot(h_data, rel_increase, 'o-', linewidth=0.8, color=colors[pp-1], label=labels[pp-1], markersize=10, alpha=0.5)
+            ax9.errorbar(h_data, rel_increase, yerr=error, ecolor=colors[pp-1], capsize=5, fmt='none')
+            for sm, s_mark in enumerate(significance):
+                ax9.text(h_data[sm]-0.065, rel_increase[sm] + error[sm] + 3.5, s_mark, fontsize=15, fontweight="bold", rotation='vertical')
+        ax9.hlines(y=0, xmin=cut_lag[0]-space_x, xmax=-(1-space_x), color="black", linestyle='dotted', linewidth=1)
+        ax9.set_xticks(cut_lag), ax9.set_xticklabels(np.abs(cut_lag)), ax9.set_ylim([-10,150])
+        ax9.set_xlabel(r"$|\tau|$"+"(step)", fontsize=15), ax9.set_ylabel("Relative Increase (%)", fontsize=15)
+
+        plt.savefig(folder+"/RCC_positive-vs-negative."+fmt, dpi=dpi, format=fmt)
