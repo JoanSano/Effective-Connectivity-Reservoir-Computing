@@ -36,7 +36,9 @@ def GC_single_subject(subject_file, opts, output_dir, format='svg'):
     print(f"Participant ID: {name_subject}")
 
     # Load time series from subject -- dims: time-points X total-ROIs
-    time_series = np.genfromtxt(subject_file, delimiter='\t')[:,1:] # First column is dropped due to Nan)
+    time_series = np.genfromtxt(subject_file)# TODO: Add compatibility, delimiter='\t')
+    if np.isnan(time_series[:,0]).all():
+        time_series = time_series[:,1:] # First column is dropped due to Nan
     limit = int(time_series.shape[0]*0.01*length)
 
     # ROIs from input command
@@ -48,8 +50,8 @@ def GC_single_subject(subject_file, opts, output_dir, format='svg'):
     )
 
     # Lags to test; in this scenario, always negative
-    max_lag = np.abs(opts.max_lag)
-    lags = np.arange(1,max_lag+1)
+    min_lag = np.abs(opts.min_lag)
+    lags = np.arange(1,min_lag+1)
 
     # Compute GC causality
     run_self_loops = False
@@ -61,12 +63,16 @@ def GC_single_subject(subject_file, opts, output_dir, format='svg'):
             data_j2i = np.array([TS2analyse[i,0,:], TS2analyse[j,0,:]]).T
 
             Score_i2j, Score_j2i = np.zeros((len(lags),)), np.zeros((len(lags),))
-            for t, lag in enumerate(lags):
-                # We only check GC one lag at a time to emulate RCC procedures
-                pvals = grangercausalitytests(data_i2j, maxlag=[lag], verbose=False)[lag][0]
-                Score_i2j[t] = 1 - pvals["ssr_ftest"][1]
-                pvals = grangercausalitytests(data_j2i, maxlag=[lag], verbose=False)[lag][0]
-                Score_j2i[t] = 1 - pvals["ssr_ftest"][1]
+            try:
+                for t, lag in enumerate(lags):
+                    # We only check GC one lag at a time to emulate RCC procedures
+                        pvals = grangercausalitytests(data_i2j, maxlag=[lag], verbose=False)[lag][0]
+                        Score_i2j[t] = 1 - pvals["ssr_ftest"][1]
+                        pvals = grangercausalitytests(data_j2i, maxlag=[lag], verbose=False)[lag][0]
+                        Score_j2i[t] = 1 - pvals["ssr_ftest"][1]
+            except:
+                print(f"Error in {name_subject} with ROIs {roi_i+1}-{roi_j+1}")
+                print(data_i2j[:20,:])
 
             # Destination directories and names of outputs
             output_dir_subject = os.path.join(output_dir,name_subject)

@@ -41,11 +41,3 @@ for rf in results_folders:
     for cf in command_args:
         if not os.path.exists(os.path.join(length,cf)):
             os.system(f"mv {os.path.join(rf,cf)} {length}")
-
-# Execute the count-summary to know if the results are complete
-sim_number = input("Simulation number: \n")
-num_subjects = input("number of subjects: \n")
-num_paired_rois = input("Number of paired ROIs: \n")
-if sim_number == '':
-    sim_number = None
-os.system(f"python analysis/count-files-summary.py {main_name} --lengths {all_lengths} --num_subjects {num_subjects} --num_paired_rois {num_paired_rois} --sim {sim_number}")
