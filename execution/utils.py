@@ -5,7 +5,7 @@ import os
 from utils.handle_arguments import initialize_and_grep_files
 
 def run_RCC():    
-    from execution.processing_subjects_tools import process_single_subject, process_multiple_subjects
+    from execution.processing_subjects_tools import process_single_subject
     # Loading the configurations and files with time series 
     opts, files, results_dir, json_config, timeseries_type = initialize_and_grep_files()
     

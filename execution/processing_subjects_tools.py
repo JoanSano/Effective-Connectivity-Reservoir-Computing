@@ -6,9 +6,8 @@ import pandas as pd
 ## Relative imports
 from execution.RCC_utils import RCC_average, directionality_test
 from execution.reservoir_networks import return_reservoir_blocks
-from utils.timeseries_surrogates import refined_AAFT_surrogates
 from utils.surrogate_tools import create_surrogates, surrogate_reservoirs
-from utils.plotting_utils import plot_RCC_Evidence
+from utils.summary import generate_report
 
 def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg', factor=10):
     """
@@ -69,66 +68,21 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             print(f"Training surrogate reservoirs for ROIs ({roi_i},{roi_j}) ...")
             surrogate_x2y, surrogate_y2x = surrogate_reservoirs(
                 TS2analyse[i], TS2analyse[j], N_surrogates, lags, I2N, N2N, split, skip, surrogate_population
-            )            
-            # Means and Standard Errors of the Mean
-            mean_x2y, sem_x2y = np.mean(x2y, axis=1), np.std(x2y, axis=1) / np.sqrt(x2y.shape[1])
-            mean_y2x, sem_y2x = np.mean(y2x, axis=1), np.std(y2x, axis=1) / np.sqrt(y2x.shape[1])
-            mean_x2ys, sem_x2ys = np.mean(surrogate_x2y, axis=1), np.std(surrogate_x2y, axis=1) / np.sqrt(surrogate_x2y.shape[1])
-            mean_y2xs, sem_y2xs = np.mean(surrogate_y2x, axis=1), np.std(surrogate_y2x, axis=1) / np.sqrt(surrogate_y2x.shape[1])
+            )  
 
             # RCC Scores
             evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x = directionality_test(
                 x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True
             )
-            
-            # Destination directories and names of outputs
-            output_dir_subject = os.path.join(output_dir,name_subject)
-            numerical = os.path.join(output_dir_subject,"Numerical")
-            figures = os.path.join(output_dir_subject,"Figures")
-            if not os.path.exists(output_dir_subject):
-                os.mkdir(output_dir_subject)
-            if not os.path.exists(numerical):
-                os.mkdir(numerical)
-            if not os.path.exists(figures):
-                os.mkdir(figures)
-            name_subject_RCC = name_subject + '_RCC_rois-' +str(roi_i+1) + 'vs' + str(roi_j+1)
-            name_subject_RCC_figure = os.path.join(figures, name_subject_RCC+'.' + format)
-            name_subject_RCC_numerical = os.path.join(numerical ,name_subject_RCC+'.tsv')
 
-            # Save numerical results
-            x2ylabel, y2xlabel = str(roi_i+1) + ' --> ' + str(roi_j+1), str(roi_j+1) + ' --> ' + str(roi_i+1)
-            xylabel = str(roi_i+1) + ' <--> ' + str(roi_j+1)
-            results = pd.DataFrame({
-                "time-lags": lags,
-                "RCCS " + xylabel: Score_xy,
-                "RCCS " + x2ylabel: Score_x2y,
-                "RCCS " + y2xlabel: Score_y2x,
-                x2ylabel: mean_x2y,
-                y2xlabel: mean_y2x,
-                'SEM ' + x2ylabel: sem_x2y,
-                'SEM ' + y2xlabel: sem_y2x,
-                'Surrogate' + x2ylabel: mean_x2ys,
-                'Surrogate' + y2xlabel: mean_y2xs,
-                'Surrogate' + 'SEM ' + x2ylabel: sem_x2ys,
-                'Surrogate' + 'SEM ' + y2xlabel: sem_y2xs
-            })
-            results.to_csv(name_subject_RCC_numerical, index=False, sep='\t', decimal='.')
-
-            # Plot Evidence for Causality  
-            if opts.plot:
-                plot_RCC_Evidence(
-                    lags,
-                    {"data": mean_x2y, "error": sem_x2y, "label": r"$\rho_{\tau}$"+f"({str(roi_i+1)},{str(roi_j+1)})", "color": "darkorange", "style": "-", "linewidth": 1, "alpha": 1}, 
-                    {"data": mean_y2x, "error": sem_y2x, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)})", "color": "green", "style": "-", "linewidth": 1, "alpha": 1}, 
-                    {"data": mean_x2ys, "error": sem_x2ys, "label": r"$\rho_{\tau}$"+f"({str(roi_i+1)},{str(roi_j+1)}"+r"$_{S}$"+")", "color": "bisque", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-                    {"data": mean_y2xs, "error": sem_y2xs, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)}"+r"$_{S}$"+")", "color": "lightgreen", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-                    save=name_subject_RCC_figure, dpi=300, y_label="Scores", x_label=r"$\tau$"+"(steps)", limits=(0,1), #scale=0.720, 
-                    significance_marks=[
-                        {"data": evidence_x2y, "color": "blue", "label": x2ylabel},
-                        {"data": evidence_y2x, "color": "red", "label": y2xlabel},
-                        {"data": evidence_xy, "color": "purple", "label": xylabel}
-                    ]
-                ) 
+            # Generate report
+            generate_report(
+                output_dir, name_subject, roi_i, roi_j,
+                lags, x2y, y2x, surrogate_x2y, surrogate_y2x,
+                Score_x2y, Score_y2x, Score_xy, 
+                evidence_x2y, evidence_y2x, evidence_xy,
+                plot=opts.plot, format=format
+            )
 
 if __name__ == '__main__':
     pass
