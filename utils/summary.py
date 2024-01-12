@@ -59,12 +59,12 @@ def plot_evidence(lags, *to_plot, **kwargs):
         plt.show()
     plt.close()
 
-def save_scores_and_evidence_and_predictabilities(
+def generate_report(
         output_dir, name_subject, roi_i, roi_j,
         lags, i2j, j2i, surrogate_i2j, surrogate_j2i,
         Score_i2j, Score_j2i, Score_ij, 
         evidence_i2j, evidence_j2i, evidence_ij,
-        plot=True, format='svg'
+        plot=[True, 'svg']
     ):   
     """
     TODO: Add description
@@ -115,6 +115,7 @@ def save_scores_and_evidence_and_predictabilities(
     })
     results.to_csv(name_subject_RCC_numerical, index=False, sep='\t', decimal='.')
 
+    plot, format = plot
     if plot:
         plot_evidence(
             lags,
