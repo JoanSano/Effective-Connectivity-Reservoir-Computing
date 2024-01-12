@@ -1,13 +1,10 @@
 import numpy as np
-from numpy.matlib import repmat
-import os
-import pandas as pd
 
 ## Relative imports
-from execution.RCC_utils import RCC_average, directionality_test
-from execution.reservoir_networks import return_reservoir_blocks
-from utils.surrogate_tools import create_surrogates, surrogate_reservoirs
-from utils.summary import generate_report
+from ReservoirComputingCausality.utils import RCC_average, directionality_test
+from ReservoirComputingCausality.reservoir_networks import return_reservoir_blocks
+from utils.surrogates.surrogate_tools import create_surrogates, surrogate_reservoirs
+from utils.summary import save_scores_and_evidence_and_predictabilities
 
 def process_single_subject(subject_file, opts, output_dir, json_file_config, format='svg', factor=10):
     """
@@ -76,7 +73,7 @@ def process_single_subject(subject_file, opts, output_dir, json_file_config, for
             )
 
             # Generate report
-            generate_report(
+            save_scores_and_evidence_and_predictabilities(
                 output_dir, name_subject, roi_i, roi_j,
                 lags, x2y, y2x, surrogate_x2y, surrogate_y2x,
                 Score_x2y, Score_y2x, Score_xy, 

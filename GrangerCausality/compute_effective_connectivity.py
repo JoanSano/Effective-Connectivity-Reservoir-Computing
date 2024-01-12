@@ -17,7 +17,7 @@ for x in range(n_subjects):
   #Print the p-values showing <0.05 if the test of stationarity is passed
   print(dftest[1]) """
 
-def GC_single_subject(subject_file, opts, output_dir, format='svg'):
+def process_single_subject(subject_file, opts, output_dir, format='svg'):
     """
     TODO: Add description of the function
 

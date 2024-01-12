@@ -2,8 +2,8 @@ import numpy as np
 from sklearn.utils import resample
 
 ## Relative imports
-from utils.timeseries_surrogates import refined_AAFT_surrogates
-from execution.RCC_utils import RCC_average
+from utils.surrogates.timeseries_surrogates import refined_AAFT_surrogates
+from ReservoirComputingCausality.utils import RCC_average
 from tqdm import tqdm
 
 def create_surrogates(time_series, ROIS, N_surrogates, factor=10):

@@ -7,3 +7,4 @@ seaborn
 joblib
 pyrcn
 numba
+statsmodels
