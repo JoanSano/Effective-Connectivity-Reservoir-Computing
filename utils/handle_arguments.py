@@ -30,10 +30,7 @@ def optional_arguments(main_parser):
     main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test")
     main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
     main_parser.add_argument('--plot', action=argparse.BooleanOptionalAction, help="Plot predictability scores for each pair of ROIs")
-
-    group = main_parser.add_mutually_exclusive_group()
-    group.add_argument('--batch_analysis', action='store_true', help="Train the reservoirs on a batch of time series instead of single training. If not present, a different reservoir will be trained for each time series and the results will be avraged.")
-    group.add_argument('--runs', type=int, default=5, help="In the case of single subject training, number of times to train the reservoir on a specific task")
+    main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
 
     return main_parser
 
@@ -52,7 +49,6 @@ def fmri_arguments(sub_parser):
 
     fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
     fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="NOT IMPLEMENTED")
-    fmri.add_argument('--plots', type=str, default="true", choices=["true","false"], help="NOT IMPLEMENTED")
     # fmri positional argument is present
     fmri.set_defaults(func=lambda: 'fmri') 
 
