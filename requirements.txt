@@ -8,3 +8,4 @@ joblib
 pyrcn
 numba
 statsmodels
+networkx
