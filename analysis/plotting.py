@@ -60,13 +60,14 @@ def plot_evidence(lags, *to_plot, **kwargs):
     # Visualization
     if 'save' in kwargs.keys():
         if kwargs['save'] is not None:
-            print('tt',kwargs['save'])
             format = kwargs['save'].split(".")[-1]
             if 'dpi' in kwargs.keys():
                 plt.savefig(kwargs['save'], dpi=kwargs['dpi'], format=format)
             else:
                 plt.savefig(kwargs['save'], format=format)
-        plt.show()
+        else:
+            plt.show()
     else:
         plt.show()
+    plt.close()
     return fig

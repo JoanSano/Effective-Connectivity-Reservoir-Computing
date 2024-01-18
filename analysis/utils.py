@@ -1,4 +1,3 @@
-import matplotlib.pylab as plt
 import numpy as np
 import os
 from glob import glob
@@ -85,21 +84,6 @@ def generate_report(
         'SEM ' + j2ilabel + 'Surrogate': sem_j2is
     })
     results.to_csv(name_subject_RCC_numerical, index=False, sep='\t', decimal='.')
-
-    if plot:
-        plot_evidence(
-            lags,
-            {"data": mean_i2j, "error": sem_i2j, "label": r"$\rho_{\tau}$"+f"({str(roi_i+1)},{str(roi_j+1)})", "color": "darkorange", "style": "-", "linewidth": 1, "alpha": 1}, 
-            {"data": mean_j2i, "error": sem_j2i, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)})", "color": "green", "style": "-", "linewidth": 1, "alpha": 1}, 
-            {"data": mean_i2js, "error": sem_i2js, "label": r"$\rho_{\tau}$"+f"({str(roi_i+1)},{str(roi_j+1)}"+r"$_{S}$"+")", "color": "bisque", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-            {"data": mean_j2is, "error": sem_j2is, "label": r"$\rho_{\tau}$"+f"({str(roi_j+1)},{str(roi_i+1)}"+r"$_{S}$"+")", "color": "lightgreen", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-            save=name_subject_RCC_figure, dpi=300, y_label="Scores", x_label=r"$\tau$"+"(steps)", limits=(0,1), #scale=0.720, 
-            significance_marks=[
-                {"data": evidence_i2j, "color": "blue", "label": i2jlabel},
-                {"data": evidence_j2i, "color": "red", "label": j2ilabel},
-                {"data": evidence_ij, "color": "purple", "label": ijlabel}
-            ]
-        ) 
 
 def process_subject_summary(
         output_dir, name_subject

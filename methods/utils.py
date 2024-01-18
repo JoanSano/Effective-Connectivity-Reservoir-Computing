@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.stats import ttest_ind
 
 from utils.training_utils import input_output_lagged, split_train_test_reshape, prepare_data
-from ReservoirComputingCausality.reservoir_networks import reservoir_network
+from methods.reservoir_networks import reservoir_network
 
 def reservoir_input2output(input, output, lag, I2N, N2N, split=75, skip=20, shuffle=False, axis=0, runs=None):
     """
