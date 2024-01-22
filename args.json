@@ -1,0 +1,18 @@
+{
+    "dir": "./Datasets/Logistic",
+    "r_folder": "Results_test",
+    "num_jobs": 1,
+    "blocks": "vanilla",
+    "num_blocks": null,
+    "split": 80,
+    "skip": 5,
+    "length": 100,
+    "subjects": ["sub-11_logistic_TS"],
+    "rois": [-1],
+    "num_surrogates": 100,
+    "min_lag": -20,
+    "max_lag": 21,
+    "plot": true,
+    "runs": 20,
+    "logistic": true
+}
