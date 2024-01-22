@@ -199,9 +199,8 @@ def handle_argumrnts(args=None):
     timeseries = logistic_arguments(timeseries, data=args_keys) # Logistic 
     
     # Parse arguiments and extract the timeseries present in command line
-    #opts = parser.parse_args()
     opts, _ = parser.parse_known_args()
-    print(opts)
+    # Get attributes
     if hasattr(opts, 'fmri'):
         timeseries_type = 'fmri'
     elif hasattr(opts, 'logistic'):
@@ -230,9 +229,10 @@ def initialize_and_grep_files(args=None):
         os.mkdir(results_dir)
 
     # Corresponding data files
-    if timeseries_type == 'logistic' and hasattr(opts, 'generate'):        
-        from utils.generate_logistic import generate_series
-        generate_series(opts)
+    if timeseries_type == 'logistic':
+        if hasattr(opts, 'generate') and opts.generate:        
+            from utils.generate_logistic import generate_series
+            generate_series(opts)
     files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
     
     # Reservoir Architecture parameters file

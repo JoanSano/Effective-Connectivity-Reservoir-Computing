@@ -1,18 +1,19 @@
 import numpy as np
+from joblib import Parallel, delayed
 
 ## Relative imports
 from methods.utils import RCC_average, directionality_test
 from methods.reservoir_networks import return_reservoir_blocks
 from utils.surrogates.surrogate_tools import create_surrogates, surrogate_reservoirs
-from analysis.utils import generate_report, process_subject_summary
+from analysis.utils import generate_report
+from utils.handle_arguments import initialize_and_grep_files  
 
 class RCC():
-    def __init__(self, output_dir, opts, json_file_config) -> None:
-        self.output_dir = output_dir
-        self.opts = opts
+    def __init__(self, args=None) -> None:
+        # Loading the configurations and files with time series 
+        self.opts, self.files, self.output_dir, self.json_file_config, self.timeseries_type = initialize_and_grep_files(args=args)
         
         # Initialization of the Reservoir blocks
-        self.json_file_config = json_file_config
         self.I2N, self.N2N = return_reservoir_blocks(
             json_file=self.json_file_config, exec_args=self.opts
         )
@@ -24,8 +25,8 @@ class RCC():
         self.length, self.ROIs, self.split = self.opts.length, self.opts.rois, self.opts.split,
         self.skip, self.runs, self.N_surrogates =  self.opts.skip, self.opts.runs, self.opts.num_surrogates
 
-    def fit(
-            self, subject_file, run_self_loops=False, format='svg', factor=10, verbose=False
+    def fit_subject(
+            self, subject_file, run_self_loops=False, format='svg', factor=10, verbose=True
         ):
         """
         TODO: Add description of the function
@@ -41,10 +42,9 @@ class RCC():
         """
         
         name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-RCC'
+        print(f"Participant ID: {name_subject}")
+        print("-------------------------------")
         if verbose:
-            print("++++++++++++++++++++++++++++++++") 
-            print(f"Participant ID: {name_subject}")
-            print("-------------------------------")
             print("Loading data")
 
         # Load time series from subject -- dims: time-points X total-ROIs
@@ -128,6 +128,40 @@ class RCC():
             print("Subject finished!")
             print("-------------------------------")
         return name_subject
+    
+    def fit_dataset(
+            self, run_self_loops=False, format='svg', factor=10, verbose=False
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+
+        name_subjects = []
+        if self.opts.num_jobs == 1:
+            print("Multiple subjects with individual reservoir training") 
+            print("============= Sequential processing =================")
+            print("INFO: \t Parallel or sequential processing depends on the input arguments --num_jobs")
+            for f in self.files:
+                name_subjects.append(
+                    self.fit_subject(f, run_self_loops=False, format='png', factor=10, verbose=True)
+                )
+        else:
+            print("Multiple subjects with individual reservoir training") 
+            print("============== Parallel processing ==================")
+            name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
+                delayed(self.fit_subject)(f, run_self_loops=False, format='png', factor=10, verbose=False)
+                for f in self.files
+            )
+
 
 if __name__ == '__main__':
     pass

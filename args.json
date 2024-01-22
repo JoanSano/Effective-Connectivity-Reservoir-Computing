@@ -7,7 +7,7 @@
     "split": 80,
     "skip": 5,
     "length": 100,
-    "subjects": ["sub-11_logistic_TS"],
+    "subjects": ["sub-11_logistic_TS", "sub-12_logistic_TS"],
     "rois": [-1],
     "num_surrogates": 100,
     "min_lag": -20,
