@@ -1,4 +1,7 @@
 # Effective-Connectivity-Reservoir-Computing
+I am working on an improved interface, for an easier and more  "plug and play" usage. It will also incorporate bivariate Granger causality and transfer entropy (for now). For urgent requests, please don't hesitate to reach at j.roget@sanoscience.org. Alternatively, take a look at the branch 'update-V1'.
+
+
 Start by creating a python environment and install the dependencies. Recomended is to use the following: 
 
 ```shell

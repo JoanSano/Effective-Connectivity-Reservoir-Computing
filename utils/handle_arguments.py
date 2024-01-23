@@ -51,8 +51,6 @@ def optional_arguments(main_parser, data=None):
             main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test")
         if "max_lag" not in present_args:
             main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
-        if "plot" not in present_args:
-            main_parser.add_argument('--plot', action=argparse.BooleanOptionalAction, help="Plot predictability scores for each pair of ROIs")
         if "runs" not in present_args:
             main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
     # Arguments from command line
@@ -70,7 +68,6 @@ def optional_arguments(main_parser, data=None):
         main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
         main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test")
         main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
-        main_parser.add_argument('--plot', action=argparse.BooleanOptionalAction, help="Plot predictability scores for each pair of ROIs")
         main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
 
     return main_parser
