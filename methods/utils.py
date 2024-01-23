@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import ttest_ind
+from statsmodels.tsa.stattools import grangercausalitytests
 
 from utils.training_utils import input_output_lagged, split_train_test_reshape, prepare_data
 from methods.reservoir_networks import reservoir_network
@@ -105,7 +106,7 @@ def score_ij(p_i2j, p_j2i, p_delta):
     """
     return (1-p_i2j) * (1-p_j2i) * p_delta
 
-def directionality_test(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True):
+def directionality_test_RCC(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True):
     """
     TODO: Add description. ONeNote for reference.
     """
@@ -138,6 +139,45 @@ def directionality_test(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significan
     evidence_xy = np.where(Score_xy>=threshold_bi, 1, np.nan)
 
     return evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x
+
+def directionality_test_GC(data_i2j, data_j2i, lags, significance=0.05, test='F'):
+    """
+    TODO: Add description. 
+    Reference: # https://www.statsmodels.org/dev/generated/statsmodels.tsa.stattools.grangercausalitytests.html
+    """
+        
+    # To get record results
+    R_i2j, R_j2i = np.zeros((len(lags),)), np.zeros((len(lags),))
+    evidence_i2j, evidence_j2i = np.zeros((len(lags),)), np.zeros((len(lags),))
+    Score_i2j, Score_j2i = np.zeros((len(lags),)), np.zeros((len(lags),))
+
+    # Significance results depend on the test
+    assert significance<=1
+    significance = 1 - significance
+    tests = {'F':'ssr_ftest', 'chi2':'ssr_chi2test', 'lr':'lrtest'}
+    if test not in tests.keys():
+        raise ValueError("Please provide a valid contrast test: F, chi2, lr")
+    else:
+        test = tests[test]
+    
+    # We compute granger tests and extract the significance based 
+    for t, lag in enumerate(lags):
+        # We only check GC one lag at a time to emulate RCC procedures 
+        GC_i2j = grangercausalitytests(data_i2j, maxlag=[lag], verbose=False)[lag]
+        GC_j2i = grangercausalitytests(data_j2i, maxlag=[lag], verbose=False)[lag]
+
+        # We extract significance based on pvalues and significance level provided
+        R_i2j[t] = np.log1p(GC_i2j[0][test][0])          # Statistic
+        R_j2i[t] = np.log1p(GC_j2i[0][test][0])
+        Score_i2j[t] = 1 - GC_i2j[0][test][1]  # p-value
+        Score_j2i[t] = 1 - GC_j2i[0][test][1] 
+
+    # We binarize the significance
+    evidence_i2j = np.where(Score_i2j>=significance, 1, np.nan)
+    evidence_j2i = np.where(Score_j2i>=significance, 1, np.nan)
+
+    return R_i2j, R_j2i, evidence_i2j, evidence_j2i, Score_i2j, Score_j2i
+
 
 if __name__ == '__main__':
     pass

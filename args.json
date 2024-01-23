@@ -12,7 +12,6 @@
     "num_surrogates": 100,
     "min_lag": -20,
     "max_lag": 21,
-    "plot": true,
     "runs": 20,
     "logistic": true
 }

@@ -11,8 +11,7 @@ def generate_report(
         directory, name_subject, roi_i, roi_j,
         lags, i2j, j2i, surrogate_i2j, surrogate_j2i,
         Score_i2j, Score_j2i, Score_ij, 
-        evidence_i2j, evidence_j2i, evidence_ij,
-        plot=[True, 'svg']
+        evidence_i2j, evidence_j2i, evidence_ij
     ):   
     """
     Saves a summary file with the following column names and info. The format is .tsv
@@ -43,11 +42,17 @@ def generate_report(
     ---------    
     """         
     # Means and Standard Errors of the Mean
-    mean_i2j, sem_i2j = np.mean(i2j, axis=1), np.std(i2j, axis=1) / np.sqrt(i2j.shape[1])
-    mean_j2i, sem_j2i = np.mean(j2i, axis=1), np.std(j2i, axis=1) / np.sqrt(j2i.shape[1])
-    mean_i2js, sem_i2js = np.mean(surrogate_i2j, axis=1), np.std(surrogate_i2j, axis=1) / np.sqrt(surrogate_i2j.shape[1])
-    mean_j2is, sem_j2is = np.mean(surrogate_j2i, axis=1), np.std(surrogate_j2i, axis=1) / np.sqrt(surrogate_j2i.shape[1])
-
+    try: # RCC multiple runs
+        mean_i2j, sem_i2j = np.mean(i2j, axis=1), np.std(i2j, axis=1) / np.sqrt(i2j.shape[1])
+        mean_j2i, sem_j2i = np.mean(j2i, axis=1), np.std(j2i, axis=1) / np.sqrt(j2i.shape[1])
+        mean_i2js, sem_i2js = np.mean(surrogate_i2j, axis=1), np.std(surrogate_i2j, axis=1) / np.sqrt(surrogate_i2j.shape[1])
+        mean_j2is, sem_j2is = np.mean(surrogate_j2i, axis=1), np.std(surrogate_j2i, axis=1) / np.sqrt(surrogate_j2i.shape[1])
+    except: # GC single run
+        mean_i2j, sem_i2j = i2j, i2j*0
+        mean_j2i, sem_j2i = j2i, j2i*0
+        mean_i2js, sem_i2js = surrogate_i2j, surrogate_i2j*0
+        mean_j2is, sem_j2is = surrogate_j2i, surrogate_j2i*0
+    
     # Destination directories and names of outputs
     output_dir_subject = os.path.join(directory,name_subject)
     numerical = os.path.join(output_dir_subject,"Numerical")
@@ -58,9 +63,7 @@ def generate_report(
         os.mkdir(numerical)
     if not os.path.exists(figures):
         os.mkdir(figures)
-    plot, format = plot
     name_subject_RCC = name_subject + '_ROIs-' +str(roi_i+1) + 'vs' + str(roi_j+1)
-    name_subject_RCC_figure = os.path.join(figures, name_subject_RCC+'.' + format)
     name_subject_RCC_numerical = os.path.join(numerical ,name_subject_RCC+'.tsv')
 
     # Save numerical results
@@ -128,7 +131,10 @@ def process_subject_summary(
     
     # Get files
     files_interactions = glob(numerical+"/*.tsv")
-    header = {k: v for v,k in enumerate(list(pd.read_csv(files_interactions[0], sep="\t").keys()))}
+    try:
+        header = {k: v for v,k in enumerate(list(pd.read_csv(files_interactions[0], sep="\t").keys()))}
+    except:
+        raise FileExistsError("File not found. Incorrect subject name.")
     
     results_subject = np.empty(shape=len(files_interactions), dtype=object)
     key_pairwise, key_ndoe2roi, key_pairwise_0Indexed, v = {}, {}, {}, 0

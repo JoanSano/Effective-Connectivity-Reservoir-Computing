@@ -1,8 +1,9 @@
 import numpy as np
 from joblib import Parallel, delayed
+import os
 
 ## Relative imports
-from methods.utils import RCC_average, directionality_test
+from methods.utils import RCC_average, directionality_test_RCC, directionality_test_GC
 from methods.reservoir_networks import return_reservoir_blocks
 from utils.surrogates.surrogate_tools import create_surrogates, surrogate_reservoirs
 from analysis.utils import generate_report
@@ -22,11 +23,11 @@ class RCC():
         self.lags = np.arange(self.opts.min_lag, self.opts.max_lag)
         
         # Load RCC config 
-        self.length, self.ROIs, self.split = self.opts.length, self.opts.rois, self.opts.split,
+        self.length, self.split = self.opts.length, self.opts.split,
         self.skip, self.runs, self.N_surrogates =  self.opts.skip, self.opts.runs, self.opts.num_surrogates
 
     def fit_subject(
-            self, subject_file, run_self_loops=False, format='svg', factor=10, verbose=True
+            self, subject_file, run_self_loops=False, factor=10, verbose=True
         ):
         """
         TODO: Add description of the function
@@ -43,7 +44,6 @@ class RCC():
         
         name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-RCC'
         print(f"Participant ID: {name_subject}")
-        print("-------------------------------")
         if verbose:
             print("Loading data")
 
@@ -54,7 +54,7 @@ class RCC():
         limit = int(time_series.shape[0]*0.01*self.length)
 
         # ROIs from input command
-        self.ROIs = list(range(time_series.shape[-1])) if self.ROIs[0] == -1 else [roi-1 for roi in self.ROIs]
+        self.ROIs = list(range(time_series.shape[-1])) if self.opts.rois[0] == -1 else [roi-1 for roi in self.opts.rois]
         self.ROIs = sorted(self.ROIs)
 
         # Time series to analyse -- dims: ROIs X 1 X time-points
@@ -69,11 +69,10 @@ class RCC():
             surrogate_population = None
         if verbose:
             print("Done!")
-            print("-------------------------------")
+            print("-----")
             print("Computing reservoir scores and evidence")
 
         # Compute RCC causality
-        run_self_loops = False
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i if run_self_loops else i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
@@ -88,7 +87,7 @@ class RCC():
                 )
                 if verbose:
                     print("Done!")
-                    print("-------------------------------")
+                    print("-----")
                 
                 # IAAFT surrogates test
                     print(f"Training surrogate reservoirs for ROIs [{roi_i},{roi_j}]")
@@ -99,18 +98,18 @@ class RCC():
                 )  
                 if verbose:
                     print("Done!")
-                    print("-------------------------------")
+                    print("-----")
 
                 # RCC Scores
                 if verbose:
                     print(f"Estimating the directionality for ROIs [{roi_i},{roi_j}]")
-                evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x = directionality_test(
+                evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x = directionality_test_RCC(
                     x2y, y2x, surrogate_x2y, surrogate_y2x, self.lags, 
                     significance=0.05, permutations=False, axis=1, bonferroni=True
                 )
                 if verbose:
                     print("Done!")
-                    print("-------------------------------")
+                    print("-----")
 
                 # Generate report
                     print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
@@ -118,19 +117,18 @@ class RCC():
                     self.output_dir, name_subject, roi_i, roi_j,
                     self.lags, x2y, y2x, surrogate_x2y, surrogate_y2x,
                     Score_x2y, Score_y2x, Score_xy, 
-                    evidence_x2y, evidence_y2x, evidence_xy,
-                    plot=[self.opts.plot, format]
+                    evidence_x2y, evidence_y2x, evidence_xy
                 )
                 if verbose:
                     print("Done!")
-                    print("-------------------------------")
-        if verbose:
-            print("Subject finished!")
-            print("-------------------------------")
+                    print("-----")
+        
+        print("Subject finished!")
+        print("-------------------------------")
         return name_subject
     
     def fit_dataset(
-            self, run_self_loops=False, format='svg', factor=10, verbose=False
+            self, run_self_loops=False, factor=10
         ):
         """
         TODO: Add description of the function
@@ -152,16 +150,147 @@ class RCC():
             print("INFO: \t Parallel or sequential processing depends on the input arguments --num_jobs")
             for f in self.files:
                 name_subjects.append(
-                    self.fit_subject(f, run_self_loops=False, format='png', factor=10, verbose=True)
+                    self.fit_subject(f, run_self_loops=run_self_loops, factor=factor, verbose=False)
                 )
         else:
             print("Multiple subjects with individual reservoir training") 
             print("============== Parallel processing ==================")
             name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
-                delayed(self.fit_subject)(f, run_self_loops=False, format='png', factor=10, verbose=False)
+                delayed(self.fit_subject)(f, run_self_loops=run_self_loops, factor=factor, verbose=False)
                 for f in self.files
             )
 
+class bivariate_GC():
+    def __init__(self, args=None) -> None:
+        # Loading the configurations and files with time series 
+        self.opts, self.files, self.output_dir, json_file_config, self.timeseries_type = initialize_and_grep_files(args=args)
+        os.remove(os.path.join(self.output_dir,json_file_config)) # No reservoir needed
 
+       # Lags to test; in this scenario, always negative
+        min_lag = np.abs(self.opts.min_lag)
+        self.lags = np.arange(1,min_lag+1)
+
+        # Load config 
+        self.length = self.opts.length
+
+    def __stationarity_test(self):
+        pass
+        # TODO
+
+    def fit_subject(
+            self, subject_file, run_self_loops=False, make_stationary=False, verbose=True
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+        
+        name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-bivGC'
+        print(f"Participant ID: {name_subject}")
+        if verbose:
+            print("Loading data")
+
+        # Load time series from subject -- dims: time-points X total-ROIs
+        time_series = np.genfromtxt(subject_file, delimiter='\t') 
+        if np.isnan(time_series[:,0]).all():
+            time_series = time_series[:,1:] # First column is dropped due to Nan
+        limit = int(time_series.shape[0]*0.01*self.length)
+
+        # ROIs from input command
+        self.ROIs = list(range(time_series.shape[-1])) if self.opts.rois[0] == -1 else [roi-1 for roi in self.opts.rois]
+        self.ROIs = sorted(self.ROIs)
+
+        # Time series to analyse -- dims: ROIs X 1 X time-points
+        TS2analyse = np.expand_dims(
+            np.array([time_series[:limit,roi] for roi in self.ROIs]), axis=1
+        )
+        if verbose:
+            print("Done!")
+            print("-----")
+            print("Computing bivariate Granger influence")
+
+        # Compute GC causality
+        for i, roi_i in enumerate(self.ROIs):
+            for j in range(i if run_self_loops else i+1, len(self.ROIs)):
+                roi_j = self.ROIs[j]
+                
+                # Data in the correct format -- dims: time-points X 2
+                # From the docs: The data for testing whether the time series in the second column 
+                # Granger causes the time series in the first column.
+                data_i2j = np.array([TS2analyse[j,0,:], TS2analyse[i,0,:]]).T # From i-->j (j = Aj + Bi)
+                data_j2i = np.array([TS2analyse[i,0,:], TS2analyse[j,0,:]]).T # From i-->j (i = Ai + Bj)
+
+                # In theory, bivariate GC should 
+                if make_stationary:
+                    pass
+                    # TODO
+                    # TODO delete the plot option from command line args --> another commit
+                
+                # Bivariate GC Scores
+                if verbose:
+                    print(f"Estimating the directionality for ROIs [{roi_i},{roi_j}]")
+                R_i2j, R_j2i, evidence_i2j, evidence_j2i, Score_i2j, Score_j2i = directionality_test_GC(
+                    data_i2j, data_j2i, self.lags, significance=0.05, test='F'
+                )
+                
+                if verbose:
+                    print("Done!")
+                    print("-----")
+
+                # Generate report --> NO surrogates, and bidirectional influences
+                    print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
+                generate_report(
+                    self.output_dir, name_subject, roi_i, roi_j,
+                    -self.lags, R_i2j, R_j2i, R_i2j*0, R_j2i*0,
+                    Score_i2j, Score_j2i, Score_i2j*0, 
+                    evidence_i2j, evidence_j2i, evidence_i2j*0
+                )
+
+                if verbose:
+                    print("Done!")
+                    print("-----")
+        print("Subject finished!")
+        print("-------------------------------")
+        return name_subject
+    
+    def fit_dataset(
+            self, run_self_loops=False, make_stationary=False
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+
+        name_subjects = []
+        if self.opts.num_jobs == 1:
+            print("============= Sequential processing =================")
+            print("INFO: \t Parallel or sequential processing depends on the input arguments --num_jobs")
+            for f in self.files:
+                name_subjects.append(
+                    self.fit_subject(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
+                )
+        else:
+            print("============== Parallel processing ==================")
+            name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
+                delayed(self.fit_subject)(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
+                for f in self.files
+            )
+    
 if __name__ == '__main__':
     pass

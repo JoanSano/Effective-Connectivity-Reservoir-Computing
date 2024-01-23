@@ -41,7 +41,10 @@ def plot_evidence(lags, *to_plot, **kwargs):
             )
             y_ini += 0.02
     # Figures details
-    z_min, z_max = kwargs["limits"]
+    if "limits" in kwargs.keys() and kwargs["limits"] is not None:
+        z_min, z_max = kwargs["limits"]
+    else:
+        z_min, z_max = 0, 1
     ax1.vlines(x=0, ymin=z_min, ymax=z_max, linewidth=0.3, color='grey', linestyles='--')
     ax1.hlines(y=0, xmin=lags[0], xmax=lags[-1], linewidth=0.3, color='grey', linestyles='--')
     ax1.spines["top"].set_visible(False), ax1.spines["right"].set_visible(False)

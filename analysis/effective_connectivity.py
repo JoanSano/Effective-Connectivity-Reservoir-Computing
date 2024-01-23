@@ -72,14 +72,14 @@ class Subject_Effective_Connectivity():
             # Create edge
             i2j_key, j2i_key, ij_key = self.__interaction_keys(*edge)
             if weighted and bidirectional:
-                w = lag_results[self.header["Score "+i2j_key]+self.header["Score "+ij_key]]
-                w_rev = lag_results[self.header["Score "+j2i_key]+self.header["Score "+ij_key]]
-            elif weighted and not bidirectional:
+                w = lag_results[self.header["Score "+i2j_key]]+lag_results[self.header["Score "+ij_key]]
+                w_rev = lag_results[self.header["Score "+j2i_key]]+lag_results[self.header["Score "+ij_key]]
+            elif (weighted) and (not bidirectional):
                 w = lag_results[self.header["Score "+i2j_key]]
                 w_rev = lag_results[self.header["Score "+j2i_key]]
-            elif not weighted and bidirectional:
-                w = lag_results[self.header["Evidence "+i2j_key]+self.header["Evidence "+ij_key]]
-                w_rev = lag_results[self.header["Evidence "+j2i_key]+self.header["Evidence "+ij_key]]
+            elif (not weighted) and (bidirectional):
+                w = lag_results[self.header["Evidence "+i2j_key]]+lag_results[self.header["Evidence "+ij_key]]
+                w_rev = lag_results[self.header["Evidence "+j2i_key]]+lag_results[self.header["Evidence "+ij_key]]
             else:                
                 w = lag_results[self.header["Evidence "+i2j_key]]
                 w_rev = lag_results[self.header["Evidence "+j2i_key]]
@@ -145,16 +145,22 @@ class Subject_Effective_Connectivity():
             ijlabel = str(roi_i) + r"$\leftrightarrow$" + str(roi_j)            
             name_roi_i, name_roi_j = str(roi_i), str(roi_j)
 
+        # Label to refer to for the predictability measure
+        score_label = kwargs["score_label"] if 'score_label' in kwargs.keys() else r"$\rho_{\tau}$"
+
+        # Y limits
+        ylims = kwargs["ylims"] if 'ylims' in kwargs.keys() else None
+        
         # Plotting
         x_label = kwargs["x_label"] if 'x_label' in kwargs.keys() else r"$\tau$"+"(steps)"
         title = kwargs["title"] if 'title' in kwargs.keys() else None
         plot_evidence(
             lags,
-            {"data": mean_i2j, "error": sem_i2j, "label": r"$\rho_{\tau}$"+f"({name_roi_i},{name_roi_j})", "color": "darkorange", "style": "-", "linewidth": 1, "alpha": 1}, 
-            {"data": mean_j2i, "error": sem_j2i, "label": r"$\rho_{\tau}$"+f"({name_roi_j},{name_roi_i})", "color": "green", "style": "-", "linewidth": 1, "alpha": 1}, 
-            {"data": mean_i2js, "error": sem_i2js, "label": r"$\rho_{\tau}$"+f"({name_roi_i},{name_roi_j}"+r"$_{S}$"+")", "color": "bisque", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-            {"data": mean_j2is, "error": sem_j2is, "label": r"$\rho_{\tau}$"+f"({name_roi_j},{name_roi_i}"+r"$_{S}$"+")", "color": "lightgreen", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
-            title=title , y_label="Eff. connectivity scoring", x_label=x_label, limits=(0,1), #scale=0.720, 
+            {"data": mean_i2j, "error": sem_i2j, "label": score_label+f"({name_roi_i},{name_roi_j})", "color": "darkorange", "style": "-", "linewidth": 1, "alpha": 1}, 
+            {"data": mean_j2i, "error": sem_j2i, "label": score_label+f"({name_roi_j},{name_roi_i})", "color": "green", "style": "-", "linewidth": 1, "alpha": 1}, 
+            {"data": mean_i2js, "error": sem_i2js, "label": score_label+f"({name_roi_i},{name_roi_j}"+r"$_{S}$"+")", "color": "bisque", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
+            {"data": mean_j2is, "error": sem_j2is, "label": score_label+f"({name_roi_j},{name_roi_i}"+r"$_{S}$"+")", "color": "lightgreen", "style": "-", "linewidth": 0.7, "alpha": 0.5}, 
+            title=title , y_label="Eff. connectivity scoring", x_label=x_label, limits=ylims, #scale=0.720, 
             significance_marks=[
                 {"data": evidence_i2j, "color": "blue", "label": i2jlabel},
                 {"data": evidence_j2i, "color": "red", "label": j2ilabel},
