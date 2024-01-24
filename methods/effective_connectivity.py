@@ -1,6 +1,8 @@
 import numpy as np
 from joblib import Parallel, delayed
 import os
+import warnings
+from statsmodels.tsa.stattools import adfuller
 
 ## Relative imports
 from methods.utils import RCC_average, directionality_test_RCC, directionality_test_GC
@@ -173,9 +175,16 @@ class bivariate_GC():
         # Load config 
         self.length = self.opts.length
 
-    def __stationarity_test(self):
-        pass
-        # TODO
+    def __stationarity_test(self, ndarrary):
+        # Adjusted Dickey-Fuller test for stationarity
+        #       H0: non-stationarity (linear trends at least)
+        #       H1: stationarity (linear trend at least)
+        p = adfuller(ndarrary, autolag="AIC")[1]
+        if p>=0.05:
+            print(f"Time series was not stationary (p={p} Adjusted Dickey-Fullet test using AIC). \n It will be made stationary: out[i]=ndarrary[i+1]-ndarray[i]! Be sure this is what you want...")
+            ndarrary = np.diff(ndarrary)
+        else:
+            return ndarrary
 
     def fit_subject(
             self, subject_file, run_self_loops=False, make_stationary=False, verbose=True
@@ -221,18 +230,19 @@ class bivariate_GC():
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i if run_self_loops else i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
+
+                # In theory, bivariate GC should only be used for stationary time series
+                # We can implement a work around, but it is deactivated by default because
+                #       it's not clear this is the correct solution
+                if make_stationary:
+                    data_i = self.__stationarity_test(TS2analyse[i,0,:])
+                    data_j = self.__stationarity_test(TS2analyse[j,0,:])
                 
                 # Data in the correct format -- dims: time-points X 2
                 # From the docs: The data for testing whether the time series in the second column 
                 # Granger causes the time series in the first column.
-                data_i2j = np.array([TS2analyse[j,0,:], TS2analyse[i,0,:]]).T # From i-->j (j = Aj + Bi)
-                data_j2i = np.array([TS2analyse[i,0,:], TS2analyse[j,0,:]]).T # From i-->j (i = Ai + Bj)
-
-                # In theory, bivariate GC should 
-                if make_stationary:
-                    pass
-                    # TODO
-                    # TODO delete the plot option from command line args --> another commit
+                data_i2j = np.array([data_j, data_i]).T # From i-->j (j = Aj + Bi)
+                data_j2i = np.array([data_i, data_j]).T # From i-->j (i = Ai + Bj)                    
                 
                 # Bivariate GC Scores
                 if verbose:
