@@ -33,7 +33,7 @@ def sample_surrogates(surrogates, N_surrogates):
 def surrogate_reservoirs(
         time_series_i, time_series_j, N_surrogates,  
         lags, I2N, N2N, split, skip, 
-        surrogate_population_ij=None
+        surrogate_population_ij=None, verbose=True
     ):
     # Sample from the surrogate population
     if surrogate_population_ij is not None: 
@@ -43,7 +43,8 @@ def surrogate_reservoirs(
     # Predictions and generation of surrogate reservoirs
     surrogate_x2y = np.zeros((len(lags),1,N_surrogates))
     surrogate_y2x = np.zeros((len(lags),1,N_surrogates))
-    for surr in tqdm(range(N_surrogates)):
+    to_iterate = tqdm(range(N_surrogates)) if verbose else range(N_surrogates)
+    for surr in to_iterate:
         # Generate surrogate time series
         if surrogate_population_ij is None: 
             surrogate_i = refined_AAFT_surrogates(time_series_i)

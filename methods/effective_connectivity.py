@@ -96,7 +96,7 @@ class RCC():
                 surrogate_x2y, surrogate_y2x = surrogate_reservoirs(
                     TS2analyse[i], TS2analyse[j], self.N_surrogates, 
                     self.lags, self.I2N, self.N2N, self.split, self.skip, 
-                    surrogate_population
+                    surrogate_population, verbose=verbose
                 )  
                 if verbose:
                     print("Done!")
@@ -237,6 +237,9 @@ class bivariate_GC():
                 if make_stationary:
                     data_i = self.__stationarity_test(TS2analyse[i,0,:])
                     data_j = self.__stationarity_test(TS2analyse[j,0,:])
+                else:
+                    data_i = TS2analyse[i,0,:]
+                    data_j = TS2analyse[j,0,:]                    
                 
                 # Data in the correct format -- dims: time-points X 2
                 # From the docs: The data for testing whether the time series in the second column 
