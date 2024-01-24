@@ -7,7 +7,7 @@ def add_json_data_to_parser(parser, data):
     allowed = [
         "dir", "r_folder", "num_jobs", "length", "subjects", "rois", 
             "min_lag", "max_lag", "blocks", "num_blocks", "split", "skip",
-            "num_surrogates", "runs"
+            "num_surrogates", "runs",
         "fmri", "deconvolve",
         "logistic", "generate", "num_points", "lags_x2y", "lags_y2x",
             "c_x2y", "c_y2x", "samples", "noise", "convolve"
