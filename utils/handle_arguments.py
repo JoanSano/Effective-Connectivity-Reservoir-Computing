@@ -243,7 +243,11 @@ def initialize_and_grep_files(args=None):
     
     # Reservoir Architecture parameters file
     json_config = './reservoir_config.json'
-    os.system(f"cp {json_config} {results_dir}")
+    if not os.path.exists(results_dir+json_config):
+        os.system(f"cp {json_config} {results_dir}")
+    else:
+        os.system(f"rm {results_dir}/reservoir_config.json")
+        os.system(f"cp {json_config} {results_dir}")
 
     # Drop command line call for transparency
     with open(os.path.join(results_dir, 'commandline_args.txt'), 'w') as f:

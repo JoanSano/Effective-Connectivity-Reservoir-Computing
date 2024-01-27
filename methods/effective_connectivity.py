@@ -146,16 +146,15 @@ class RCC():
         """
 
         name_subjects = []
+        print("Multiple subjects with individual reservoir training") 
+        print("INFO: Parallel or sequential processing depends on the input arguments --num_jobs")
         if self.opts.num_jobs == 1:
-            print("Multiple subjects with individual reservoir training") 
             print("============= Sequential processing =================")
-            print("INFO: \t Parallel or sequential processing depends on the input arguments --num_jobs")
             for f in self.files:
                 name_subjects.append(
                     self.fit_subject(f, run_self_loops=run_self_loops, factor=factor, verbose=False)
                 )
         else:
-            print("Multiple subjects with individual reservoir training") 
             print("============== Parallel processing ==================")
             name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
                 delayed(self.fit_subject)(f, run_self_loops=run_self_loops, factor=factor, verbose=False)
@@ -290,10 +289,10 @@ class bivariate_GC():
         TODO: Add output description.
         """
 
+        print("INFO: Parallel or sequential processing depends on the input arguments --num_jobs")
         name_subjects = []
         if self.opts.num_jobs == 1:
             print("============= Sequential processing =================")
-            print("INFO: \t Parallel or sequential processing depends on the input arguments --num_jobs")
             for f in self.files:
                 name_subjects.append(
                     self.fit_subject(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
