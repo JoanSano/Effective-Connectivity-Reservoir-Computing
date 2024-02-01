@@ -29,6 +29,7 @@ else:
 total = 0
 for length in opts.lengths:
     incomplete, complete = '', ''
+    incomplete_subjects, complete_subjects = [], []
     num_incomplete, total_L = 0, 0
     if opts.sim is None:
         length_files = glob.glob(f"{dataset}/*Length-{length}*Method-{opts.method}*/Numerical/*.tsv")
@@ -40,10 +41,12 @@ for length in opts.lengths:
         sub_len_dir = "/".join(ID.split("/")[:-2])
         extension = ID.split(".")[-1]
         subject_ID = ID.split("/")[-1]
+        ID = subject_ID.split("_")[0]
         
         if extension not in ['json', 'csv', 'txt', 'png']:
             if not os.path.exists(sub_len_numerical_dir):  
                 incomplete += subject_ID + "\n"
+                incomplete_subjects.append(ID)
                 num_incomplete += 1
             else:
                 files = os.listdir(sub_len_numerical_dir)
@@ -51,14 +54,20 @@ for length in opts.lengths:
                 total_L += len(files)
                 if len(files) == num_pairs:
                     complete += subject_ID + "\n"
+                    complete_subjects.append(ID)
                 else:
                     incomplete += subject_ID  + "\n"
+                    incomplete_subjects.append(ID)
                     num_incomplete += 1
                     if remove:
                         shutil.rmtree(sub_len_dir)
-
+    incomplete_subjects = set(incomplete_subjects)
+    complete_subjects = set(complete_subjects)
     print("\n")
-    print(f"Length {length} with {total_L} found files and a total of {num_incomplete} compromised files:")
+    print(f"----------------------------- Length: {length} ---------------------------------------------")
+    print(f"COMPROMISED SUBJECTS: {' '.join(incomplete_subjects)}")
+    print(f"Total files found: {total_L}")
+    print(f"Potentially incomplete files: {num_incomplete}")
     print(incomplete)
     print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 print(f"Total number of files found: {total}. Total number expected: {correct_number*len(opts.lengths)}")
