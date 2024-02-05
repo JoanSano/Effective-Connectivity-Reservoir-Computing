@@ -27,7 +27,7 @@ else:
     remove = True
 
 total = 0
-for length in opts.lengths:
+for tt, length in enumerate(opts.lengths):
     incomplete, complete = '', ''
     incomplete_subjects, complete_subjects = [], []
     num_incomplete, total_L = 0, 0
@@ -50,8 +50,8 @@ for length in opts.lengths:
                 num_incomplete += 1
             else:
                 files = os.listdir(sub_len_numerical_dir)
-                total += len(files)
-                total_L += len(files)
+                total += 1
+                total_L += 1
                 if len(files) == num_pairs:
                     complete += subject_ID + "\n"
                     complete_subjects.append(ID)
