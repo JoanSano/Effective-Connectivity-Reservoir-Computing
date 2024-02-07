@@ -65,7 +65,7 @@ class RCC():
         )
         
         # Generate and predict surrogates
-        if len(self.ROIs)<=(factor/2 + 1):
+        if len(self.ROIs)>=(factor/2 + 1):
             surrogate_population = create_surrogates(TS2analyse, self.ROIs, self.N_surrogates, factor=factor)
         else:
             surrogate_population = None

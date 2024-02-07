@@ -15,6 +15,7 @@ if [ $b -eq 1 ]
 then 
 	SUBJECTS="sub-1_sim-"$SIM_NUM"_TS sub-2_sim-"$SIM_NUM"_TS sub-3_sim-"$SIM_NUM"_TS sub-4_sim-"$SIM_NUM"_TS sub-5_sim-"$SIM_NUM"_TS" 
 
+elif [ $b -eq 2 ]
 then
 	SUBJECTS="sub-6_sim-"$SIM_NUM"_TS sub-7_sim-"$SIM_NUM"_TS sub-8_sim-"$SIM_NUM"_TS sub-9_sim-"$SIM_NUM"_TS sub-10_sim-"$SIM_NUM"_TS"
 
@@ -65,11 +66,11 @@ cat <<EOF > submit-tmp_job-batch-$b"_"$length.sh
 ## tasks per node
 #SBATCH --ntasks-per-node=$JOBS 
 ## cpus per task
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=6
 ## memory allocated per cpu
 ##SBATCH --mem-per-cpu=2GB
 ## max time
-#SBATCH --time=4:00:00
+#SBATCH --time=2:45:00
 ## grant name
 #SBATCH -A plgsano4-cpu
 ## partition
@@ -81,7 +82,7 @@ cat <<EOF > submit-tmp_job-batch-$b"_"$length.sh
 
 # Conda environment setting
 conda activate $SCRATCH/conda-envs/$ENV_NAME
-cd $SCRATCH/"Files/GitRepos/"$GITREPO
+cd $SCRATCH/Files/GitRepos/$GITREPO
 ./HPC-resources/experiment.sh -L $i -J $JOBS -D $DATA_DIR -R $RESULTS$i $SUBJECTS
 
 EOF

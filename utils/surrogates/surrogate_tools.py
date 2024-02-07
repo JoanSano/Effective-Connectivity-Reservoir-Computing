@@ -23,10 +23,10 @@ def sample_surrogates(surrogates, N_surrogates):
     """
     TODO: Add documentation
     time_series [numpy_array(#ROIS X 1 X time-points)]:
-    surrogates [str, numpy array(#lags X ROIS X populations_surrogates)]:
+    surrogates [str, numpy array(#ROIS X populations_surrogates X time-points)]:
     """
     # Sample from them without replacement
-    population = list(range(surrogates.shape[-1]))
+    population = list(range(surrogates.shape[1]))
     samples = resample(population, n_samples=N_surrogates, replace=False, stratify=None)
     return surrogates[:,samples,:]
 
