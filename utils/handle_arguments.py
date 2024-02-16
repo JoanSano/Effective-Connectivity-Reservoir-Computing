@@ -232,7 +232,11 @@ def initialize_and_grep_files(args=None):
     root_dir = os.getcwd()
     results_dir = os.path.join(root_dir, opts.r_folder)
     if not os.path.exists(results_dir):
-        os.mkdir(results_dir)
+        try:
+            os.mkdir(results_dir)
+        except:
+            # The os control flag did not work due to simultaneous jobs running
+            pass
 
     # Corresponding data files
     if timeseries_type == 'logistic':

@@ -3,7 +3,7 @@
 echo " "
 ENV_NAME="causality"
 GITREPO="Effective-Connectivity-Reservoir-Computing"
-SIM_NUM="1"
+SIM_NUM="7"
 DATA_DIR="Datasets/Netsim/Sim-"$SIM_NUM"/Timeseries"
 RESULTS="Results_Dataset-Netsim_Sim-"$SIM_NUM"_Length-"
 JOBS=3
@@ -66,11 +66,11 @@ cat <<EOF > submit-tmp_job-batch-$b"_"$length.sh
 ## tasks per node
 #SBATCH --ntasks-per-node=$JOBS 
 ## cpus per task
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=3
 ## memory allocated per cpu
 ##SBATCH --mem-per-cpu=2GB
 ## max time
-#SBATCH --time=2:45:00
+#SBATCH --time=48:00:00
 ## grant name
 #SBATCH -A plgsano4-cpu
 ## partition
@@ -91,6 +91,6 @@ sbatch submit-tmp_job-batch-$b"_"$length.sh
 echo "Job Netsim_batch-"$b"_"$length" submitted succesfully!"
 echo " "
 rm "submit-tmp_job-batch-"$b"_"$length".sh"
-sleep 0.5
+# sleep 0.5
 done
 done
