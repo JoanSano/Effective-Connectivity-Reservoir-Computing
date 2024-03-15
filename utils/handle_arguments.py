@@ -3,7 +3,14 @@ from datetime import datetime
 import os
 import json
 
-def add_json_data_to_parser(parser, data):
+class NameSpace(object):
+    pass
+
+def add_json_data_to_parser(data):
+    # Creating instance of NameSpace:
+    opts = NameSpace()
+
+    # Checking inputs
     allowed = [
         "dir", "r_folder", "num_jobs", "length", "subjects", "rois", 
             "min_lag", "max_lag", "blocks", "num_blocks", "split", "skip",
@@ -12,11 +19,21 @@ def add_json_data_to_parser(parser, data):
         "logistic", "generate", "num_points", "lags_x2y", "lags_y2x",
             "c_x2y", "c_y2x", "samples", "noise", "convolve"
     ]
+    exclusive = ["fmri", "logistic"]
+    k = 0
+    for a in data.keys():
+        k = k+1 if a in exclusive else k
+    if k!=1:
+        raise NameError(f"Please provide only one of the following: {exclusive}")
+    
+    # Generating object
     for key, value in data.items():
-        if key in allowed:
-            parser.add_argument(f'--{key}', type=type(value), default=value)
-
-    return parser
+        if key not in allowed:
+            raise NameError(f"Unrecognized argument: {key}")
+        else:
+            #parser.add_argument(f'--{key}', type=type(value), default=value)
+            setattr(opts, key, value)
+    return opts
 
 def optional_arguments(main_parser, data=None):
     """
@@ -32,46 +49,16 @@ def optional_arguments(main_parser, data=None):
     main_parser: (object) Includes the optional command line arguments stored as attributes
     """
 
-    # Arguments from json file or dict
-    if data is not None: 
-        present_args = data.keys()
-        if "r_folder" not in present_args:
-            def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
-            main_parser.add_argument('-rf','--r_folder', type=str, default=def_folder, help="Output directory where results will be stored")
-        if "num_jobs" not in present_args:
-            main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
-        if "blocks" not in present_args:
-            main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
-        if "num_blocks" not in present_args:
-            main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
-        if "split" not in present_args:
-            main_parser.add_argument('--split', type=int, default=100, help="Train split percentage (int) from 0 to 100 (0 and 100 means no split). For batch training splits accross subjects; otherwise, accross time series length; k-fold CV specified by -k")
-        if "skip" not in present_args:
-            main_parser.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
-        if "length" not in present_args:
-            main_parser.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
-        if "subjects" not in present_args:
-            main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
-        if "rois" not in present_args:
-            main_parser.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
-        if "num_surrogates" not in present_args:
-            main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
-        if "min_lag" not in present_args:
-            main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test")
-        if "max_lag" not in present_args:
-            main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
-        if "runs" not in present_args:
-            main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
     # Arguments from command line
-    else:
+    if isinstance(main_parser, argparse.ArgumentParser):
         def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
         main_parser.add_argument('-rf','--r_folder', type=str, default=def_folder, help="Output directory where results will be stored")
         main_parser.add_argument('-j', '--num_jobs', type=int, default=2, help='Number of parallel jobs to launch')
         main_parser.add_argument('-b', '--blocks', type=str, choices=['vanilla', 'sequential', 'parallel'], default="vanilla", help="Choose the type of architecture")
         main_parser.add_argument('-nb', '--num_blocks', type=int, default=None, help="If not 'vanilla' specifiy as a second argument the number of blocks")
-        main_parser.add_argument('--split', type=int, default=100, help="Train split percentage (int) from 0 to 100 (0 and 100 means no split). For batch training splits accross subjects; otherwise, accross time series length; k-fold CV specified by -k")
+        main_parser.add_argument('--split', type=int, default=80, help="Train split percentage (int) from 0 to 100 (0 and 100 means no split). For batch training splits accross subjects; otherwise, accross time series length; k-fold CV specified by -k")
         main_parser.add_argument('--skip', type=int, default=10, help="Number of time points to skip when testing predictability")
-        main_parser.add_argument('--length', type=int, default=100, help="Length of the time series to analyse")
+        main_parser.add_argument('--length', type=int, default=100, help="Percentage of the length of the time series to analyse")
         main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
         main_parser.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
         main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
@@ -79,6 +66,37 @@ def optional_arguments(main_parser, data=None):
         main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
         main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
 
+    # Arguments from json file or dict
+    else: 
+        present_args = data.keys()
+        if "r_folder" not in present_args:
+            def_folder = 'Results' + datetime.now().strftime("%d-%m-%Y_%H-%M")
+            setattr(main_parser, "r_folder", def_folder)
+        if "num_jobs" not in present_args:
+            setattr(main_parser, "num_jobs", 2)
+        if "blocks" not in present_args:
+            setattr(main_parser, "blocks", "vanilla")
+        if "num_blocks" not in present_args:
+            setattr(main_parser, "num_blocks", None)
+        if "split" not in present_args:
+            setattr(main_parser, "split", 80)
+        if "skip" not in present_args:
+            setattr(main_parser, "skip", 10)
+        if "length" not in present_args:
+            setattr(main_parser, "length", 100)
+        if "subjects" not in present_args:
+            setattr(main_parser, "subjects", '-1')
+        if "rois" not in present_args:
+            setattr(main_parser, "rois", [-1])
+        if "num_surrogates" not in present_args:
+            setattr(main_parser, "num_surrogates", 100)
+        if "min_lag" not in present_args:
+            setattr(main_parser, "min_lag", -30)
+        if "max_lag" not in present_args:
+            setattr(main_parser, "max_lag", 31)
+        if "runs" not in present_args:
+            setattr(main_parser, "runs", 5)
+    
     return main_parser
 
 def fmri_arguments(sub_parser, data=None):
@@ -95,19 +113,19 @@ def fmri_arguments(sub_parser, data=None):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    # Arguments from json file or dict
-    if data is not None:
-        present_args = data.keys()
-        if "fmri" in present_args and data["fmri"]:
-            fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-            if "deconvolve" not in present_args:
-                fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="NOT IMPLEMENTED")
     # Arguments from command line
-    else:
+    if data is None:
         fmri = sub_parser.add_parser('fmri', help="Analyse fMRI time series; Use the flag [(-h,--help) HELP] to see optional inputs")
-        fmri.add_argument('--deconvolve', type=int, default=[-1], nargs='+', help="NOT IMPLEMENTED")
+        fmri.add_argument('--deconvolve', type=int, default=None, nargs='+', help="NOT IMPLEMENTED")
         # fmri positional argument is present
         fmri.set_defaults(func=lambda: 'fmri') 
+
+    # Arguments from json file or dict
+    else: 
+        present_args = data.keys()
+        if "fmri" in present_args and data["fmri"]:
+            if "deconvolve" not in present_args:
+                setattr(sub_parser, "deconvolve", None)
 
     return sub_parser
 
@@ -125,31 +143,8 @@ def logistic_arguments(sub_parser, data=None):
     sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
     """
 
-    # Arguments from json file or dict
-    if data is not None:
-        present_args = data.keys()
-        if "logistic" in present_args and data["logistic"]:
-            logistic = sub_parser.add_parser('logistic', help="Anlysis of logistic time series to test the method; Use the flag [(-h,--help) HELP] to see optional inputs")
-            if "generate" in present_args and data["generate"]:
-                logistic.add_argument('--generate', action='store_true', help="Generate logistic time series")
-                if "num_points" in present_args: 
-                    logistic.add_argument('--num_points', type=int, default=250, help="Number of time points to generate")
-                if "lags_x2y" in present_args:    
-                    logistic.add_argument('--lags_x2y', type=int, default=[2], nargs='+', help="Lags where the causal relationship from x to y take place")
-                if "lags_y2x" in present_args:    
-                    logistic.add_argument('--lags_y2x', type=int, default=None, nargs='+', help="Lags where the causal relationship from y to x take place")
-                if "c_x2y" in present_args:    
-                    logistic.add_argument('--c_x2y', type=float, default=[0.8], nargs='+', help="Strengths of the causal relationship from x to y take place")
-                if "genec_y2xrate" in present_args:    
-                    logistic.add_argument('--c_y2x', type=float, default=None, nargs='+', help="Strengths of the causal relationship from y to x take place")
-                if "samples" in present_args:    
-                    logistic.add_argument('--samples', type=int, default=10, help="Number of samples to generate - they will be treated as subjects")
-                if "noise" in present_args:    
-                    logistic.add_argument('--noise', type=float, default=[0, 1], nargs='+', help="Coupling and Standard deviation of the white noise to be added")
-                if "convolve" in present_args:    
-                    logistic.add_argument('--convolve', type=int, default=None, help="Kernel size of the filter to convolve. If not specified no convolution will be applied.")
     # Arguments from command line
-    else:
+    if data is None:
         logistic = sub_parser.add_parser('logistic', help="Anlysis of logistic time series to test the method; Use the flag [(-h,--help) HELP] to see optional inputs")
         logistic.add_argument('--generate', action='store_true', help="Generate logistic time series")
         logistic.add_argument('--num_points', type=int, default=250, help="Number of time points to generate")
@@ -163,6 +158,28 @@ def logistic_arguments(sub_parser, data=None):
         # logistic positional argument is present
         logistic.set_defaults(func=lambda: 'logistic')
 
+    # Arguments from json file or dict
+    else: 
+        present_args = data.keys()
+        if "logistic" in present_args and data["logistic"]:
+            if "generate" in present_args and data["generate"]:
+                if "num_points" not in present_args: 
+                    setattr(sub_parser, "num_points", 250)
+                if "lags_x2y" not in present_args:    
+                    setattr(sub_parser, "lags_x2y", [2])
+                if "lags_y2x" not in present_args:    
+                    setattr(sub_parser, "lags_y2x", None)
+                if "c_x2y" not in present_args:    
+                    setattr(sub_parser, "c_x2y", [0.8])
+                if "c_y2x" not in present_args:    
+                    setattr(sub_parser, "c_y2x", None)
+                if "samples" not in present_args:    
+                    setattr(sub_parser, "samples", 10)
+                if "noise" not in present_args:    
+                    setattr(sub_parser, "noise", [0, 1])
+                if "convolve" not in present_args:    
+                    setattr(sub_parser, "convolve", None)
+    
     return sub_parser
 
 def handle_argumrnts(args=None): 
@@ -180,33 +197,50 @@ def handle_argumrnts(args=None):
 
     Additional behaviors: The function terminates the program if one positional argument has not been provided
     """
+    # Arguments passed through command line
+    if args is None: 
+        parser = argparse.ArgumentParser("\nCompute Reservoir Computing Causality on time series.\nIn development.\n")
+        parser.add_argument('dir', type=str, default='./Datasets/Unknown', help="Relative path pointing to the directory where the data is stored and/or generated")
 
-    parser = argparse.ArgumentParser("\nCompute Reservoir Computing Causality on time series.\nIn development.\n")
-    if args is None: # Arguments passed through command line
-        args_keys = None
-        parser.add_argument('dir', type=str, default='./Datasets/Logistic', help="Relative path pointing to the directory where the data is stored and/or generated")
-    elif isinstance(args, str): # Arguments passed as a json file (i.e., string)    
+        # Optional arguments -- Reservoir architecture and parameters
+        parser = optional_arguments(parser)
+        
+        # Positional arguments (mutually exclusive) regarding which time series to analyse
+        timeseries = parser.add_subparsers()    
+        timeseries = fmri_arguments(timeseries) # fMRI    
+        timeseries = logistic_arguments(timeseries) # Logistic 
+
+        # Parse arguiments and extract the timeseries present in command line
+        opts, _ = parser.parse_known_args()
+    
+    # ============================================ #
+    # Arguments passed as a json file (i.e., string)
+    elif isinstance(args, str):     
         with open(args, 'rt') as f:
             args_keys = json.load(f)
-            parser = add_json_data_to_parser(parser, args_keys)            
-    elif isinstance(args, dict): # Arguments passed as a json file (i.e., string)
+        # Main arguments
+        opts = add_json_data_to_parser(args_keys)  
+        # Optional arguments
+        opts = optional_arguments(opts, data=args_keys) 
+        # Exclusive arguments
+        opts = fmri_arguments(opts, data=args_keys) # fMRI    
+        opts = logistic_arguments(opts, data=args_keys) # Logistic  
+
+    # ============================================ # 
+    # Arguments passed as a json file (i.e., string)
+    elif isinstance(args, dict): 
         args_keys = args
-        parser = add_json_data_to_parser(parser, args_keys)   
+        # Main arguments
+        opts = add_json_data_to_parser(args_keys)  
+        # Optional arguments
+        opts = optional_arguments(opts, data=args_keys) 
+        # Exclusive arguments
+        opts = fmri_arguments(opts, data=args_keys) # fMRI    
+        opts = logistic_arguments(opts, data=args_keys) # Logistic 
     else: 
         raise TypeError("Please provide input arguments in the form of --flags -F (i.e., command line), json file or python dictionary")
     
-    # Optional arguments -- Reservoir architecture and parameters
-    parser = optional_arguments(parser, data=args_keys)
-    
-    ###########################################
-    # Positional arguments (mutually exclusive) regarding which time series to analyse
-    timeseries = parser.add_subparsers()    
-    timeseries = fmri_arguments(timeseries, data=args_keys) # fMRI    
-    timeseries = logistic_arguments(timeseries, data=args_keys) # Logistic 
-    
-    # Parse arguiments and extract the timeseries present in command line
-    opts, _ = parser.parse_known_args()
-    # Get attributes
+    # Get time series type
     if hasattr(opts, 'fmri'):
         timeseries_type = 'fmri'
     elif hasattr(opts, 'logistic'):
@@ -227,7 +261,7 @@ def initialize_and_grep_files(args=None):
     
     # Execution options
     opts, timeseries_type = handle_argumrnts(args=args)
-    
+
     # Creating necessary paths
     root_dir = os.getcwd()
     results_dir = os.path.join(root_dir, opts.r_folder)
@@ -257,7 +291,7 @@ def initialize_and_grep_files(args=None):
     with open(os.path.join(results_dir, 'commandline_args.txt'), 'w') as f:
         for arg, val in zip(opts.__dict__.keys(),opts.__dict__.values()):
             f.write(arg+': '+str(val)+'\n')
-            
+
     return opts, files, results_dir, json_config, timeseries_type
 
 if __name__ == '__main__':
