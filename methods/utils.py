@@ -106,6 +106,52 @@ def score_ij(p_i2j, p_j2i, p_delta):
     """
     return (1-p_i2j) * (1-p_j2i) * p_delta
 
+def threshold_unidirectional(p_i2j, p_j2i, p_delta_positive, p_delta_negative, lags, significance=0.05):
+    # This score is monotonous with respect to both hypotheses
+    # H1: Accept better predictability
+    # H2: Accept predictability (considering surrogates)
+    # Each direction has its own score
+    # Gathering evidence from X -> Y
+    evidence_x2y = (lags<0) * (
+        # H1 (negative lag)
+        ((1-p_delta_negative) > (1-significance)) *
+        # H2 (negative lag)
+        ((1-p_j2i) > (1-significance))
+        ) + (lags>0) * (
+        # H1 (positive lag)
+        ((1-p_delta_positive) > (1-significance)) * 
+        # H2 (positive lag)
+        ((1-p_i2j) > (1-significance))
+    )
+    # Gathering evidence from Y -> X
+    evidence_y2x = (lags<0) * (
+        # H1 (negative lag)
+        ((1-p_delta_positive) > (1-significance)) *
+        # H2 (negative lag)
+        ((1-p_i2j) > (1-significance))
+        ) + (lags>0) * (
+        # H1 (positive lag)
+        ((1-p_delta_negative) > (1-significance)) * 
+        # H2 (positive lag)
+        ((1-p_j2i) > (1-significance))
+    )        
+    return np.where(evidence_x2y==1, 1, np.nan), np.where(evidence_y2x==1, 1, np.nan)
+
+def threshold_bidirectional(p_i2j, p_j2i, p_delta, significance=0.05):
+    # This score is monotonous with respect to all three hypotheses
+    # We can compute a critical value and anything above is significant
+    evidence_xy = (
+        # H1: Accept j from i (considering surrogates)
+        (1-p_i2j) > (1-significance)
+        ) * (
+        # H2: Accept i from j (considering surrogates) 
+        (1-p_j2i) > (1-significance)
+        ) * (
+        # H3: Reject delta different from zero
+        p_delta > (significance)
+    )
+    return np.where(evidence_xy==1, 1, np.nan)
+
 def directionality_test_RCC(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, significance=0.05, permutations=False, axis=1, bonferroni=True):
     """
     TODO: Add description. ONeNote for reference.
@@ -126,18 +172,28 @@ def directionality_test_RCC(x2y, y2x, surrogate_x2y, surrogate_y2x, lags, signif
     Score_xy = score_ij(p_x2y, p_y2x, p_delta)
     
     # Statistical evidence: Compute the scores at the critical values (one-sided and two sided respectively)
-    if bonferroni:
+    # WROOOONG calculations!!!
+    """ if bonferroni:
         # Num hypothesis is 3
         threshold_uni, _ = unidirectional_score_ij(significance/2, significance/2, significance/2, significance/2, -1)
-        threshold_bi = score_ij(significance/3, significance/3, significance/(2*3))
+        #threshold_bi = score_ij(significance/3, significance/3, significance/(2*3))
+        threshold_bi = score_ij(significance/3, significance/3, significance/3)
     else:
         threshold_uni, _ = unidirectional_score_ij(significance, significance, significance, significance, -1)
-        threshold_bi = score_ij(significance, significance, significance/2)
+        #threshold_bi = score_ij(significance, significance, significance/2)
+        threshold_bi = score_ij(significance, significance, significance)
     
     evidence_x2y = np.where(Score_x2y>=threshold_uni, 1, np.nan)
     evidence_y2x = np.where(Score_y2x>=threshold_uni, 1, np.nan)
-    evidence_xy = np.where(Score_xy>=threshold_bi, 1, np.nan)
-
+    evidence_xy = np.where(Score_xy>=threshold_bi, 1, np.nan) """
+    evidence_x2y, evidence_y2x = threshold_unidirectional(
+        p_x2y, p_y2x, p_delta_positive, p_delta_negative, lags, 
+        significance=significance/2 if bonferroni else significance
+    )
+    evidence_xy = threshold_bidirectional(
+        p_x2y, p_y2x, p_delta, 
+        significance=significance/3 if bonferroni else significance
+    )
     return evidence_xy, evidence_x2y, evidence_y2x, Score_xy, Score_x2y, Score_y2x
 
 def directionality_test_GC(data_i2j, data_j2i, lags, significance=0.05, test='F'):
