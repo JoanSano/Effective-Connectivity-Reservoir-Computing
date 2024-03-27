@@ -1,11 +1,9 @@
 import numpy as np
+import networkx as nx
 import os
 from glob import glob
 import pandas as pd 
 import json
-
-# Relative imports
-from analysis.plotting import plot_evidence
 
 def generate_report(
         directory, name_subject, roi_i, roi_j,
@@ -131,8 +129,10 @@ def process_subject_summary(
     
     # Get files
     files_interactions = glob(numerical+"/*.tsv")
+    headers = []
     try:
-        header = {k: v for v,k in enumerate(list(pd.read_csv(files_interactions[0], sep="\t").keys()))}
+        for f in range(len(files_interactions)):
+            headers.append({k: v for v,k in enumerate(list(pd.read_csv(files_interactions[f], sep="\t").keys()))})
     except:
         raise FileExistsError("File not found. Incorrect subject name.")
     
@@ -175,4 +175,97 @@ def process_subject_summary(
         "0Indexed_TO_fileID_pairwise_keys": key_pairwise_0Indexed,
         "0Indexed_TO_Original_pariwise_keys":key_pairwise
     }
-    return results_subject, header, ROI_CODE_Converter
+    return results_subject, headers, ROI_CODE_Converter
+
+class RCC_Scores(object):
+    pass
+
+def save_networks(networks: dict, directory: str, save_as="csv", group_names=None): 
+    # File delimiters       
+    dels = {"csv": ',', "tsv": "\t"}
+    # Deal with different type of objects
+    if isinstance(networks, dict):
+        for k, v in networks.items():
+            # TODO: Deal with 3D arrays a.ndim==3
+            if (v.ndim == 3) and (group_names is None):
+                raise ValueError("3D arrays require group_names dictionary to save each element independently")
+            elif (v.ndim == 3) and (group_names is not None):
+                for i in range(v.shape[0]):
+                    name = os.path.join(directory, f"{group_names[i]}_Network-at_Lag{int(k)}.{save_as}")
+                    np.savetxt(name, v[i,...], delimiter=dels[save_as])
+            else:
+                name = os.path.join(directory, f"Network-at_Lag{int(k)}.{save_as}")
+                np.savetxt(name, v, delimiter=dels[save_as])
+    else:
+        raise TypeError("Network(s) need to be provided in the form of a python dictionary")
+
+def is_symmetric(network):
+    return (network==network.T).sum()/(network.shape[0]*network.shape[1]) == 1
+
+def symmetrize(network):
+    if list(np.unique(network)) == [0,1]:
+        network = network + network.T
+        return np.where(network>0, 1, 0)
+    else:
+        return 0.5*(network + network.T)
+
+class Constraints():
+    def __init__(self, structure) -> None:
+        self.structure = structure
+    
+    def k_neighbor_constraints(self, network, structure=None, k=1):
+        k = int(k)
+        if k<1:
+            raise ValueError("k needs to be a positive integer")
+        
+        if structure is None:
+            struct = self.structure
+        else:
+            struct = structure
+
+        k_constraint = np.copy(struct)
+        for k in range(1,k):
+            k_constraint = struct @ k_constraint
+            np.fill_diagonal(k_constraint, 0)
+        return  network * k_constraint, k_constraint
+
+    def flat_k_constraints(self, network, structure=None, k=1):
+        """
+        It returns a flat array containing ONLY the entries of the adjacency matrix that 
+        are connected after applying the k-th neighbor constraints. Importantly, it returns
+        the entries in both directions. 
+        
+        This function is specially useful when computing classification/prediction metrics.
+        """
+
+        c_net, c_gt = self.k_neighbor_constraints(network, structure, k=k)
+        # return c_net[np.nonzero(c_gt)], c_gt[np.nonzero(c_gt)]
+        return c_net[np.nonzero(c_gt)], c_gt[np.nonzero(c_gt)]
+
+    def k_neighbor_possible_connectivity(self, network, k=1):
+        # We get the predictions associated to the true connections
+        net_ones, gt_ones = self.flat_k_constraints(network, k=k)
+
+        # We get the k-neighbor of the strucutre
+        _, a2 = self.k_neighbor_constraints(network, k=k)
+
+        # We get the false connections that could be inferred
+        false_ij = np.where((a2.T-a2)>0,1,0)
+
+        # We get the predictions for these false connections
+        net_zeros, gt_zeros = self.flat_k_constraints(network, false_ij, k=1)
+
+        # We join the true and false predictions
+        pred = np.concatenate((net_ones, net_zeros), axis=0)
+        gt = np.concatenate((gt_ones, gt_zeros-1), axis=0)
+        return pred, gt
+    
+    def randomize_predictions(self, network, k=1, which="both"):
+        # Constrain the predictions to the possible values for a given neighborhood #
+        pred, gt = self.k_neighbor_possible_connectivity(network, self.structure, k=k)
+
+        if which=="both":
+            return np.random.shuffle(pred), np.random.shuffle(gt)
+        else:
+            return np.random.shuffle(pred), gt
+

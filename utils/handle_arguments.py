@@ -251,7 +251,9 @@ def handle_argumrnts(args=None):
         except:
             print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic,...}")
             quit()
-
+    # Making path as absolutes
+    opts.dir = os.path.abspath(opts.dir)
+    opts.r_folder = os.path.abspath(opts.r_folder)
     return opts, timeseries_type
 
 def initialize_and_grep_files(args=None):

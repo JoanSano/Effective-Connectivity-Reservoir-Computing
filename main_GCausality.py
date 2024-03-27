@@ -1,6 +1,6 @@
 if __name__ == '__main__':
     ## Relative imports
-    from methods.effective_connectivity import bivariate_GC
+    from methods.compute_ec import bivariate_GC
     
     # Create instance of Bivariate Granger Causality object
     BivariateGrangerCausality = bivariate_GC()

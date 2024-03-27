@@ -61,4 +61,4 @@ def surrogate_reservoirs(
         _, surrogate_y2x[...,surr], _, _ = RCC_average(
             surrogate_i, time_series_j, lags, I2N, N2N, split=split, skip=skip, shuffle=False, axis=1, runs=None, average=False
         )
-    return np.squeeze(surrogate_x2y, axis=1), np.squeeze(surrogate_y2x)   
+    return np.squeeze(surrogate_x2y, axis=1), np.squeeze(surrogate_y2x, axis=1)   

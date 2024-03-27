@@ -19,7 +19,7 @@ def plot_evidence(lags, *to_plot, **kwargs):
     ax.remove()
 
     ##################
-    left, bottom, width, height = [0.1, 0.12 , 0.85, 0.85]
+    left, bottom, width, height = [0.1, 0.25 , 0.85, 0.65]
     ax1 = fig.add_axes([left, bottom, width, height])
     # Plot main curves
     for curve in to_plot:   
@@ -54,7 +54,7 @@ def plot_evidence(lags, *to_plot, **kwargs):
     # Legend
     handles, labels = ax1.get_legend_handles_labels()
     unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
-    ax1.legend(*zip(*unique),fontsize=8, frameon=False, ncols=4, loc='upper center', bbox_to_anchor=(0.5,-0.15))
+    ax1.legend(*zip(*unique), fontsize=8, frameon=False, ncols=4, bbox_to_anchor=(0.5,-0.15), loc='upper center')
     # Title
     if 'title' in kwargs.keys():
         plt.title(kwargs["title"])
