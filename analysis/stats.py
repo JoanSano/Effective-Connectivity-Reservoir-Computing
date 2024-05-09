@@ -87,80 +87,39 @@ class DET_utils():
 
         # Compute DET curve for real data
         self.fpr_real, self.fnr_real, self.thresholds_real = det_curve(self.ground_truths, self.predictions)
-    
-    def bootstrap_det(self, n_bootstrap=1000, CI_level=95, random_state=None, resolution=0.1):
-        """
-        Documentation
-        """
 
-        # Relevant quantities
-        fpr_interp = np.linspace(0, 1, int(1/resolution))[::-1]
-        fnr_interp = np.zeros((n_bootstrap, fpr_interp.shape[0]))
-        # TODO: Add other metrics -- if applicable
-        auc_boot = np.zeros((n_bootstrap,))
+        # TODO: Think whether we can and want to bootstrap this curve
 
-        alpha = (100 - CI_level)/200
+    def plot(self, sample_auc, color="black", save: str=None, dpi: int=None):
+        fig, ax = plt.subplots(1,1,figsize=(6,5))
+        
+        ax.plot(scipy.stats.norm.ppf(self.fpr_real), scipy.stats.norm.ppf(self.fnr_real), c=color, linewidth=2, label=f"AUC={round(sample_auc,3)}")
+        ax.plot(scipy.stats.norm.ppf(self.fpr_real), -scipy.stats.norm.ppf(self.fpr_real), c="black", linewidth=0.5, linestyle='--', label="Chance levels")
+        ax.legend(frameon=False)
+        ax.spines["top"].set_visible(False), ax.spines["right"].set_visible(False)
+        ax.set_xlabel("False Positive Rate", fontsize=15)
+        ax.set_ylabel("False Negative Rate", fontsize=15)
+        
+        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+        tick_locations = scipy.stats.norm.ppf(ticks)
+        tick_labels = [
+            "{:.0%}".format(s) if (100 * s).is_integer() else "{:.1%}".format(s)
+            for s in ticks
+        ]
+        ax.set_xticks(tick_locations)
+        ax.set_yticks(tick_locations)
+        ax.set_xticklabels(tick_labels)
+        ax.set_yticklabels(tick_labels)
 
-        # Non-parametric bounds
-        ID_lower = int(alpha * n_bootstrap)
-        ID_upper = int((1-alpha) * n_bootstrap)
-
-        # Parametric bounds
-        z_stat = scipy.stats.norm.ppf(1-alpha) if n_bootstrap>=30 else scipy.stats.t.ppf(1-alpha, df=n_bootstrap-1)
-
-        # Bootstrapping
-        i = 0
-        while i<n_bootstrap:
-            pred_boot, gt_boot = resample(
-                self.predictions, self.ground_truths, replace=True, 
-                n_samples=len(self.predictions), random_state=random_state
-            )
-            if len(np.unique(gt_boot))==2:
-                # At least one sample of each class is needed
-                fpr_boot, fnr_boot, _ = det_curve(gt_boot, pred_boot)
-                fnr_interp[i] = np.interp(fpr_interp, fpr_boot[::-1], fnr_boot)
-                fnr_interp[i,0] = 1
-                auc_boot[i] = roc_auc_score(gt_boot, pred_boot)
-                i += 1
+        if save is not None:
+            format = save.split(".")[-1]
+            if dpi is not None:
+                plt.savefig(save, dpi=dpi, format=format)
             else:
-                continue
-
-        # Sort AUCs to obtain the lower and upper thresholds
-        sorted_aucs = np.copy(auc_boot)
-        sorted_aucs.sort()
-        x = auc_boot.argsort()
-        fnr_interp_sorted_auc = np.zeros((n_bootstrap, fpr_interp.shape[0]))
-        for i,j in enumerate(x):
-            fnr_interp_sorted_auc[i,:] = fnr_interp[j,:]
-
-        # Sorting based on true positive rates --> this ensures that curves don't cross
-        #   but it requires a re-ordering that creates curves that were not directly bootstrapped
-        fnr_interp_sorted_fnr = np.sort(fnr_interp, axis=0)
-
-        # Statistics from the bootstrapped distribution
-        DET_BOOTSTRAPPED = RCC_Scores()
-        DET_BOOTSTRAPPED.fpr = fpr_interp[::-1]
-        DET_BOOTSTRAPPED.fnr = fnr_interp
-
-        # Central measures
-        DET_BOOTSTRAPPED.mean_fnr = fnr_interp.mean(axis=0)
-        DET_BOOTSTRAPPED.median_fnr = np.median(fnr_interp, axis=0)
-        # Dispersion measures
-        DET_BOOTSTRAPPED.std = fnr_interp.std(axis=0)
-        DET_BOOTSTRAPPED.sem =  DET_BOOTSTRAPPED.std / np.sqrt(n_bootstrap)
-        # Confidence Interval
-        DET_BOOTSTRAPPED.CI = RCC_Scores()
-        DET_BOOTSTRAPPED.CI.parametric, DET_BOOTSTRAPPED.CI.nonparametric = RCC_Scores(), RCC_Scores()
-        DET_BOOTSTRAPPED.CI.parametric.true_value = (DET_BOOTSTRAPPED.mean_fnr - z_stat * DET_BOOTSTRAPPED.std, DET_BOOTSTRAPPED.mean_fnr + z_stat * DET_BOOTSTRAPPED.std)
-        DET_BOOTSTRAPPED.CI.parametric.mean_bootstrap = (DET_BOOTSTRAPPED.mean_fnr - z_stat * DET_BOOTSTRAPPED.sem, DET_BOOTSTRAPPED.mean_fnr + z_stat * DET_BOOTSTRAPPED.sem)
-        DET_BOOTSTRAPPED.CI.nonparametric.sorted_auc = (fnr_interp_sorted_auc[ID_lower,:], fnr_interp_sorted_auc[ID_upper,:])
-        DET_BOOTSTRAPPED.CI.nonparametric.sorted_tprates = (fnr_interp_sorted_fnr[ID_lower,:], fnr_interp_sorted_fnr[ID_upper,:])
-        # Tolerance Intervals
-        # TODO
-        return DET_BOOTSTRAPPED
-
-    def plot(self, dir: str=None, name: str="DET_curve", format: str="png"):
-        pass
+                plt.savefig(save, format=format) 
+        else:
+            plt.show()
+        return fig
 
 class ROC_utils():
     # Adapted from roc_utils: https://github.com/hirsch-lab/roc-utils/tree/main
