@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.utils import resample
 from sklearn.metrics import roc_curve, roc_auc_score, det_curve
 import scipy.stats
+import matplotlib.pylab as plt
 
 # Relative imports
 from analysis.utils import RCC_Scores
@@ -158,7 +159,7 @@ class DET_utils():
         # TODO
         return DET_BOOTSTRAPPED
 
-    def plot_det(self, dir: str=None, name: str="DET_curve", format: str="png"):
+    def plot(self, dir: str=None, name: str="DET_curve", format: str="png"):
         pass
 
 class ROC_utils():
@@ -248,10 +249,37 @@ class ROC_utils():
         # TODO
         # https://github.com/jg-854/tolerance_intervals/blob/master/tolerances.py
         # https://math.stackexchange.com/questions/3724039/tolerance-limit-interval-in-python
+        self.ROC_BOOTSTRAPPED = ROC_BOOTSTRAPPED
         return ROC_BOOTSTRAPPED
 
-    def plot_roc(self):
-        pass
+    def plot(self, sample_auc, color="black", save: str=None, dpi: int=None):
+        fig, ax = plt.subplots(1,1,figsize=(6,5))
+        if self.ROC_BOOTSTRAPPED is None:
+            raise ValueError("Please run bootstrap before plotting")
+        
+        ax.plot(self.fpr_real, self.tpr_real, c=color, linewidth=2, label=f"AUC={round(sample_auc,3)}")
+        ax.plot(self.fpr_real, self.fpr_real, c="black", linewidth=0.5, linestyle='--', label="Chance levels")
+        ax.fill_between(self.ROC_BOOTSTRAPPED.fpr, *self.ROC_BOOTSTRAPPED.CI.nonparametric.sorted_tprates, color=color, alpha=0.1, edgecolor=None)
+        for i in range(100):
+            ax.plot(self.ROC_BOOTSTRAPPED.fpr, self.ROC_BOOTSTRAPPED.tpr[i], alpha=0.05, c="gray") 
+        ax.legend(frameon=False)
+        ax.spines["top"].set_visible(False), ax.spines["right"].set_visible(False)
+        ax.set_xlabel("False Positive Rate", fontsize=15)
+        ax.set_ylabel("True Positive Rate", fontsize=15)
+        ax.set_xlim([0,1.01])
+        ax.set_ylim([0,1.01])
+        ax.set_xticks([0,0.25,0.5,0.75,1])
+        ax.set_yticks([0,0.25,0.5,0.75,1])
+
+        if save is not None:
+            format = save.split(".")[-1]
+            if dpi is not None:
+                plt.savefig(save, dpi=dpi, format=format)
+            else:
+                plt.savefig(save, format=format) 
+        else:
+            plt.show()
+        return fig
 
 class DeLong_Test():    
     # Adopted from https://github.com/yandexdataschool/roc_comparison 

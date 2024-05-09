@@ -189,8 +189,10 @@ class Group_EC():
     def __init__(self, directory, ROI_Labels=None) -> None:
         self.directory = directory
         self.subjects = dict()
-        ss = [s for s in os.listdir(directory) if s.split(".")[-1] not in ['txt','csv','tsv','json','png','svg','jpg','jpeg']]
-        for i, s in enumerate(ss):
+        self.subject_list = [
+            s for s in os.listdir(directory) if s.split(".")[-1] not in ['txt','csv','tsv','json','png','svg','jpg','jpeg']
+        ]
+        for i, s in enumerate(self.subject_list):
             self.subjects[s] = i
         self.Ns = len(self.subjects)
 
@@ -244,6 +246,7 @@ class Group_EC():
         mean_i2j, mean_j2i = [], []
         mean_i2js, mean_j2is = [], []
         # Create database of results
+        print("Loading interaction scores from all subjects ...")
         for s, i in tqdm(self.subjects.items()):
             SEC = Subject_EC(self.directory, s, ROI_Labels=self.ROI_Labels)
             lags, mean, _, _ = SEC.get_interaction_scores(roi_i, roi_j)
