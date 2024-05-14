@@ -271,9 +271,8 @@ def initialize_and_grep_files(args=None):
         try:
             os.mkdir(results_dir)
         except:
-            # The os control flag did not work due to simultaneous jobs running
-            pass
-
+            os.makedirs(results_dir, exist_ok=True)
+            
     # Corresponding data files
     if timeseries_type == 'logistic':
         if hasattr(opts, 'generate') and opts.generate:        
