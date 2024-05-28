@@ -1,6 +1,6 @@
 if __name__ == '__main__':
     ## Relative imports
-    from methods.compute_ec import RCC
+    from methods.estimators.reservoir_based import RCC
     
     # Create instance of RCC
     ReservoirComputingCausality = RCC()
