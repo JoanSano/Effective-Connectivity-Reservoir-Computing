@@ -8,7 +8,7 @@ from methods.utils import directionality_test_GC
 from analysis.utils import generate_report
 from utils.handle_arguments import initialize_and_grep_files  
 
-class bivariate_GC():
+class pwGC():
     def __init__(self, args=None) -> None:
         # Loading the configurations and files with time series 
         self.opts, self.files, self.output_dir, json_file_config, self.timeseries_type = initialize_and_grep_files(args=args)
@@ -29,8 +29,7 @@ class bivariate_GC():
         if p>=0.05:
             print(f"Time series was not stationary (p={p} Adjusted Dickey-Fullet test using AIC). \n It will be made stationary: out[i]=ndarrary[i+1]-ndarray[i]! Be sure this is what you want...")
             ndarrary = np.diff(ndarrary)
-        else:
-            return ndarrary
+        return ndarrary
 
     def fit_subject(
             self, subject_file, run_self_loops=False, make_stationary=False, verbose=True
@@ -150,6 +149,36 @@ class bivariate_GC():
                 delayed(self.fit_subject)(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
                 for f in self.files
             )
-    
+
+class pwCGC():
+    def __init__(self, args=None) -> None:
+        # Loading the configurations and files with time series 
+        self.opts, self.files, self.output_dir, json_file_config, self.timeseries_type = initialize_and_grep_files(args=args)
+        os.remove(os.path.join(self.output_dir,json_file_config)) # No reservoir needed
+
+       # Lags to test; in this scenario, always negative
+        min_lag = np.abs(self.opts.min_lag)
+        self.lags = np.arange(1,min_lag+1)
+
+        # Load config 
+        self.length = self.opts.length
+
+    def __stationarity_test(self, arrary, N=None):
+        # Adjusted Dickey-Fuller test for stationarity
+        #       H0: non-stationarity (linear trends at least)
+        #       H1: stationarity (linear trend at least)
+
+        if N is None:
+            N = sorted(arrary.shape)[0] # By chance, smaller dimension of the array (the biggest is likely to be time samples)
+        
+        stationary_ndarray = arrary * 0
+        for i in range(N):
+            p = adfuller(arrary, autolag="AIC")[1]
+            if p>=0.05:
+                print(f"Time series {i} was not stationary (p={p} Adjusted Dickey-Fullet test using AIC). \n It will be made stationary: out[i]=ndarrary[i+1]-ndarray[i]! Be sure this is what you want...")
+                stationary_ndarray = np.diff(arrary)
+        
+        return stationary_ndarray
+
 if __name__ == '__main__':
     pass
