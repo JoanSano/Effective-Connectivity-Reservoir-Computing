@@ -17,9 +17,11 @@ def add_json_data_to_parser(data):
             "num_surrogates", "runs",
         "fmri", "deconvolve",
         "logistic", "generate", "num_points", "lags_x2y", "lags_y2x",
-            "c_x2y", "c_y2x", "samples", "noise", "convolve"
+            "c_x2y", "c_y2x", "samples", "noise", "convolve",
+        "var", "generate", "num_points", "samples", "order", "size",
+            "scaling", "convolve"
     ]
-    exclusive = ["fmri", "logistic"]
+    exclusive = ["fmri", "logistic", "var"]
     k = 0
     for a in data.keys():
         k = k+1 if a in exclusive else k
@@ -182,6 +184,53 @@ def logistic_arguments(sub_parser, data=None):
     
     return sub_parser
 
+def VAR_arguments(sub_parser, data=None):
+    """
+    Adds optional arguments to the logistic argument parser
+
+    Arguments
+    ---------
+    sub_parser: (parser object) Subparser object
+    data: (dict) Optional dictionary containing arguments from json file or python dict -- Necessary for jupyter notebook usage
+
+    Output
+    ------
+    sub_parser: (object) Includes the optional command line arguments associated to the fmri parser stored as attributes
+    """
+
+    # Arguments from command line
+    if data is None:
+        var = sub_parser.add_parser('var', help="Anlysis of Variate AutoRegressor (VAR) time series to test the method; Use the flag [(-h,--help) HELP] to see optional inputs")
+        var.add_argument('--generate', action='store_true', help="Generate VAR time series")
+        var.add_argument('--num_points', type=int, default=250, help="Number of time points to generate")
+        var.add_argument('--samples', type=int, default=10, help="Number of samples to generate - they will be treated as subjects")
+        var.add_argument('--order', type=int, default=1, help="Order of the system to generate")
+        var.add_argument('--size', type=int, default=4, help="Number of variables to include in the system")
+        var.add_argument('--scaling', type=float, default=0.5, nargs='+', help="Strengths of the causal relationship from y to x take place")
+        var.add_argument('--convolve', type=int, default=None, help="Kernel size of the filter to convolve. If not specified no convolution will be applied.")
+        # logistic positional argument is present
+        var.set_defaults(func=lambda: 'var')
+
+    # Arguments from json file or dict
+    else: 
+        present_args = data.keys()
+        if "var" in present_args and data["var"]:
+            if "generate" in present_args and data["generate"]:
+                if "num_points" not in present_args: 
+                    setattr(sub_parser, "num_points", 250)
+                if "samples" not in present_args:    
+                    setattr(sub_parser, "samples", 10)
+                if "order" not in present_args:    
+                    setattr(sub_parser, "order", 1)
+                if "size" not in present_args:    
+                    setattr(sub_parser, "size", 4)
+                if "scaling" not in present_args:    
+                    setattr(sub_parser, "scaling", 0.5)
+                if "convolve" not in present_args:    
+                    setattr(sub_parser, "convolve", None)
+    
+    return sub_parser
+
 def handle_argumrnts(args=None): 
     """
     Creates the parser object that handles the command line inputs. 
@@ -209,6 +258,7 @@ def handle_argumrnts(args=None):
         timeseries = parser.add_subparsers()    
         timeseries = fmri_arguments(timeseries) # fMRI    
         timeseries = logistic_arguments(timeseries) # Logistic 
+        timeseries = VAR_arguments(timeseries) # Variate Autoregressor 
 
         # Parse arguiments and extract the timeseries present in command line
         opts, _ = parser.parse_known_args()
@@ -245,11 +295,13 @@ def handle_argumrnts(args=None):
         timeseries_type = 'fmri'
     elif hasattr(opts, 'logistic'):
         timeseries_type = 'logistic'
+    elif hasattr(opts, 'var'):
+        timeseries_type = 'var'
     else:
         try:
             timeseries_type = opts.func() 
         except:
-            print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic,...}")
+            print("InputError: Missing positional argument specifying the time series; choose from: {fmri,logistic,var}")
             quit()
     # Making path as absolutes
     opts.dir = os.path.abspath(opts.dir)
@@ -276,8 +328,12 @@ def initialize_and_grep_files(args=None):
     # Corresponding data files
     if timeseries_type == 'logistic':
         if hasattr(opts, 'generate') and opts.generate:        
-            from utils.generate_logistic import generate_series
-            generate_series(opts)
+            from utils.generate import logistic
+            logistic(opts)
+    if timeseries_type == 'var':
+        if hasattr(opts, 'generate') and opts.generate:        
+            from utils.generate import VAR
+            VAR(opts)    
     files = [os.path.join(opts.dir, f) for f in os.listdir(opts.dir) if f.split(".")[0] in opts.subjects or opts.subjects[0] == '-1']
     
     # Reservoir Architecture parameters file

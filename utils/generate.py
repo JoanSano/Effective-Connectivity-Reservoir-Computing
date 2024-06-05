@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-def generate_series(opts):    
+def logistic(opts):    
     """
     TODO: Add documentation
     """
@@ -42,6 +42,28 @@ def generate_series(opts):
 
         name = os.path.join(dir, "sub-"+str(sample)+"_logistic_TS.txt")
         np.savetxt(name, to_save, delimiter='\t')    
+
+def VAR(opts):
+    """
+    TODO: Add documentation
+    """
+
+    dir = os.path.join(os.getcwd(), opts.dir)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+    
+    A = opts.scaling * np.random.rand(opts.size,opts.size) * np.random.randint(0,2, size=(opts.size,opts.size))
+    for sample in range(1, opts.samples+1):
+        to_save = np.zeros((opts.size+1,opts.num_points))
+        to_save[1:,0] = np.random.randn(opts.size)
+        for i in range(1,opts.num_points):
+            to_save[1:,i] = to_save[1:,i-1] @ A + np.random.randn(opts.size)
+
+        to_save[0] = to_save[0] * np.nan
+        to_save = to_save.T
+        name = os.path.join(dir, "sub-"+str(sample)+"_VAR_TS.txt")
+        np.savetxt(name, to_save, delimiter='\t')    
+    quit()
 
 if __name__=='__main__':
     pass
