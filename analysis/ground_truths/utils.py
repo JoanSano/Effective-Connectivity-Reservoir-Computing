@@ -34,6 +34,11 @@ def load_netsim_networks(netsim_dir, sim, subject_list):
     networks_binary = np.array(networks_binary).mean(axis=0) 
     return networks_weighted, networks_binary
 
+def load_var_network(var_dir):    
+    network_weighted = np.genfromtxt(os.path.join(var_dir, "Networks","network.tsv"), delimiter="\t")
+    network_binary = np.where(network_weighted>0,1,0)
+    return network_weighted, network_binary
+
 class Metrics(Bootstrapping):
     def __init__(self, ground_truth, weighted_predictions=None, binary_predictions=None, random_state=None) -> None:
         """
@@ -76,9 +81,9 @@ class Metrics(Bootstrapping):
         if (binary_predictions is not None) and (self.batched is None):
             self.batched = True if binary_predictions.ndim==2 else False            
         self.n_samples = len(weighted_predictions) if self.batched else None
-        self.bootstrap_stats = RCC_Scores()
 
         super().__init__(ground_truth=self.ground_truth, random_state=random_state)
+        self.bootstrap_stats = RCC_Scores()
 
     def __sensitivity(self, ground_truth, prediction):
         """
@@ -170,16 +175,8 @@ class Metrics(Bootstrapping):
             positive_predictive_value = tp / (tp + fp) if (tp + fp)>0 else 0
             negative_predictive_value = tn / (tn + fn) if (tn + fn)>0 else 0
             return sensitivity, specificity, positive_predictive_value, negative_predictive_value
-
-    """ def compute_auc(self):
-        if self.batched:
-            aucs = np.zeros((self.n_samples,))
-            for i in range(self.n_samples):
-                aucs[i] = roc_auc_score(self.ground_truth, self.weighted_predictions[i,:])
-        else:
-            return roc_auc_score(self.ground_truth, self.weighted_predictions) """
         
-    def auc(self, n_bootstrap=None, level=95):
+    def auc(self, n_bootstrap=None, level=None):
         if self.batched:
             # Real scores            
             aucs = np.zeros((self.n_samples,))
@@ -206,12 +203,12 @@ class Metrics(Bootstrapping):
                 )       
         # Bootstrapping the stats
         if n_bootstrap is not None:  
-            self.bootstrap_stats.auc = self.compute_stats(RCC_Scores, auc_boot, level=95)
+            self.bootstrap_stats.auc = self.compute_stats(RCC_Scores, auc_boot, level=level)
             self.bootstrap_stats.auc.true = aucs
 
         return aucs
         
-    def sensitivity(self, n_bootstrap=1000):
+    def sensitivity(self, n_bootstrap=None, level=None):
         if self.batched:
             # Real scores            
             senses = np.zeros((self.n_samples,))
@@ -238,12 +235,12 @@ class Metrics(Bootstrapping):
             )      
         # Bootstrapping the stats
         if n_bootstrap is not None:  
-            self.bootstrap_stats.sensitivity = self.compute_stats(RCC_Scores, senses_boot, level=95)
+            self.bootstrap_stats.sensitivity = self.compute_stats(RCC_Scores, senses_boot, level=level)
             self.bootstrap_stats.sensitivity.true = senses
 
         return senses
         
-    def specificity(self, n_bootstrap=1000):
+    def specificity(self, n_bootstrap=None, level=None):
         if self.batched:
             # Real scores            
             specs = np.zeros((self.n_samples,))
@@ -270,12 +267,12 @@ class Metrics(Bootstrapping):
             )    
         # Bootstrapping the stats
         if n_bootstrap is not None:  
-            self.bootstrap_stats.specificity = self.compute_stats(RCC_Scores, specs_boot, level=95)
+            self.bootstrap_stats.specificity = self.compute_stats(RCC_Scores, specs_boot, level=level)
             self.bootstrap_stats.specificity.true = specs
 
         return specs
         
-    def positive_predictive_value(self, n_bootstrap=1000):        
+    def positive_predictive_value(self, n_bootstrap=None, level=None):        
         if self.batched:
             # Real scores            
             ppvs = np.zeros((self.n_samples,))
@@ -302,12 +299,12 @@ class Metrics(Bootstrapping):
             )
         # Bootstrapping the stats
         if n_bootstrap is not None:  
-            self.bootstrap_stats.ppv = self.compute_stats(RCC_Scores, ppvs_boot, level=95)
+            self.bootstrap_stats.ppv = self.compute_stats(RCC_Scores, ppvs_boot, level=level)
             self.bootstrap_stats.ppv.true = ppvs
 
         return ppvs
         
-    def negative_predicitive_value(self, n_bootstrap=1000):    
+    def negative_predicitive_value(self, n_bootstrap=None, level=None):    
         if self.batched:
             # Real scores            
             npvs = np.zeros((self.n_samples,))
@@ -334,10 +331,7 @@ class Metrics(Bootstrapping):
             )
         # Bootstrapping the stats
         if n_bootstrap is not None:  
-            self.bootstrap_stats.npv = self.compute_stats(RCC_Scores, npvs_boot, level=95)
+            self.bootstrap_stats.npv = self.compute_stats(RCC_Scores, npvs_boot, level=level)
             self.bootstrap_stats.npv.true = npvs
 
         return npvs
-        
-    def all(self, n_bootstrap=1000):
-        pass

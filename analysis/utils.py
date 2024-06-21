@@ -233,14 +233,20 @@ class Constraints():
         """
         It returns a flat array containing ONLY the entries of the adjacency matrix that 
         are connected after applying the k-th neighbor constraints. Importantly, it returns
-        the entries in both directions. 
+        the entries in both directions as long as they are present in the structure. 
         
         This function is specially useful when computing classification/prediction metrics.
         """
 
         c_net, c_gt = self.k_neighbor_constraints(network, structure, k=k)
         # return c_net[np.nonzero(c_gt)], c_gt[np.nonzero(c_gt)]
-        return c_net[np.nonzero(c_gt)], c_gt[np.nonzero(c_gt)]
+        if network.ndim==3:
+            c_nets = []
+            for i in range(network.shape[0]):
+                c_nets.append(c_net[i][np.nonzero(c_gt)])
+            return np.array(c_nets), c_gt[np.nonzero(c_gt)]
+        else:
+            return c_net[np.nonzero(c_gt)], c_gt[np.nonzero(c_gt)]
 
     def k_neighbor_possible_connectivity(self, network, k=1):
         # We get the predictions associated to the true connections
@@ -256,8 +262,8 @@ class Constraints():
         net_zeros, gt_zeros = self.flat_k_constraints(network, false_ij, k=1)
 
         # We join the true and false predictions
-        pred = np.concatenate((net_ones, net_zeros), axis=0)
-        gt = np.concatenate((gt_ones, gt_zeros-1), axis=0)
+        pred = np.concatenate((net_ones, net_zeros), axis=-1)
+        gt = np.concatenate((gt_ones, gt_zeros-1), axis=-1)
         return pred, gt
     
     def randomize_predictions(self, network, k=1, which="both"):
@@ -269,3 +275,9 @@ class Constraints():
         else:
             return np.random.shuffle(pred), gt
 
+    def constrain_datset(self, networks: dict, k: int=1):
+        constraint_networks = dict()
+        constraint_gts = dict()
+        for lag, nets in networks.items():
+            constraint_networks[lag], constraint_gts[lag] = self.k_neighbor_possible_connectivity(nets, k=k)
+        return constraint_networks, constraint_gts

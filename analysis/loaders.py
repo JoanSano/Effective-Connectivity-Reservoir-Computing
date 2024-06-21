@@ -41,7 +41,10 @@ class Subject_EC():
 
         # Network and method properties
         self.N_rois, self.N_edges = self._0Indexed_ROIs[-1]+1, len(self.results_subject)
-        self.lags =  self.results_subject[0][:,0]
+        if np.ndim(self.results_subject[0]) == 1: # Just a single lag
+            self.lags = np.array([self.results_subject[0][0]])
+        else:
+            self.lags =  self.results_subject[0][:,0]
         self.key2lag = dict(zip(self.lags, range(0,len(self.lags))))
     
     def __get_file_ID(self, roi_i, roi_j):
@@ -71,9 +74,11 @@ class Subject_EC():
         for edge, _0Indexed_edge in self._0Indexed_TO_Original_pariwise_keys.items():
             file_ID = self._0Indexed_TO_fileID_pairwise_keys[_0Indexed_edge]
             header_interaction = self.headers[file_ID]
-            lag_results = self.results_subject[file_ID][lag,:]
+            if np.ndim(self.results_subject[file_ID]) == 1:
+                lag_results = self.results_subject[file_ID] # Just a single lag
+            else:
+                lag_results = self.results_subject[file_ID][lag,:]
             edge, _0Indexed_edge = list(edge), list(_0Indexed_edge)
-            
             # Create edge
             i2j_key, j2i_key, ij_key = self.__interaction_keys(*edge)
             if weighted and bidirectional:
