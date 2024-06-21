@@ -11,7 +11,7 @@ class Netsim(Group_EC, Constraints):
         # Initialize the EC reader
         Group_EC.__init__(self, directory=results_dir, ROI_Labels=ROI_Labels)
 
-        # Load arguments from the command line input used to run RCC
+        # Load arguments from the command line input used to run the estimator
         with open(os.path.join(os.path.abspath(self.directory),"commandline_args.txt")) as args:
             for arg in args.readlines():
                 (key,val) = arg.strip().split(": ")
