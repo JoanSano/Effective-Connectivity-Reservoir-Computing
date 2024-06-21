@@ -51,6 +51,10 @@ def VAR(opts):
     dir = os.path.join(os.getcwd(), opts.dir)
     if not os.path.exists(dir):
         os.mkdir(dir)
+    if not os.path.exists(os.path.join(dir,"Timeseries")):
+        os.mkdir(os.path.join(dir,"Timeseries"))
+    if not os.path.exists(os.path.join(dir,"Networks")):
+        os.mkdir(os.path.join(dir,"Networks"))
     
     A = opts.scaling * np.random.rand(opts.size,opts.size) * np.random.randint(0,2, size=(opts.size,opts.size))
     for sample in range(1, opts.samples+1):
@@ -61,9 +65,10 @@ def VAR(opts):
 
         to_save[0] = to_save[0] * np.nan
         to_save = to_save.T
-        name = os.path.join(dir, "sub-"+str(sample)+"_VAR_TS.txt")
-        np.savetxt(name, to_save, delimiter='\t')    
-    quit()
+        name = os.path.join(dir, "Timeseries", "sub-"+str(sample)+"_VAR_TS.txt")
+        np.savetxt(name, to_save, delimiter='\t') 
+        np.savetxt(os.path.join(dir,"Networks", "network.tsv"), A, delimiter='\t') 
+
 
 if __name__=='__main__':
     pass

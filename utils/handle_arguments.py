@@ -275,9 +275,10 @@ def handle_argumrnts(args=None):
         # Exclusive arguments
         opts = fmri_arguments(opts, data=args_keys) # fMRI    
         opts = logistic_arguments(opts, data=args_keys) # Logistic  
+        opts = VAR_arguments(opts, data=args_keys) # VAR
 
     # ============================================ # 
-    # Arguments passed as a json file (i.e., string)
+    # Arguments passed as a python dictionary
     elif isinstance(args, dict): 
         args_keys = args
         # Main arguments
@@ -287,6 +288,7 @@ def handle_argumrnts(args=None):
         # Exclusive arguments
         opts = fmri_arguments(opts, data=args_keys) # fMRI    
         opts = logistic_arguments(opts, data=args_keys) # Logistic 
+        opts = VAR_arguments(opts, data=args_keys) # VAR
     else: 
         raise TypeError("Please provide input arguments in the form of --flags -F (i.e., command line), json file or python dictionary")
     

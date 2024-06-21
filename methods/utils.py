@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import ttest_ind
+from scipy.stats import ttest_ind, chi2
 from statsmodels.tsa.stattools import grangercausalitytests
+from statsmodels.tsa.api import VAR
 
 from utils.training_utils import input_output_lagged, split_train_test_reshape, prepare_data
 from methods.reservoir_networks import reservoir_network
@@ -234,6 +235,89 @@ def directionality_test_GC(data_i2j, data_j2i, lags, significance=0.05, test='F'
 
     return R_i2j, R_j2i, evidence_i2j, evidence_j2i, Score_i2j, Score_j2i
 
+def reorder_y2x(data, y, x):
+    """
+    Re-order the data to test the conditional granger causality from 
+        y to x, where x and y are indices of the variables.
+
+    The output data is organized as: data[x], data[y], data[Z], where 
+        Z are all the other series.
+
+    Inputs:
+        data [T,N]: (np.array) where T is the time samples and N the 
+                    number of variables
+        y: (int) index of the cause to test
+        x: (int) index of the consequence to test
+    """
+    full = data * 0
+    full[:,0] = data[:,x]
+    full[:,1] = data[:,y]
+    k = 2
+    for i in range(data.shape[1]):
+        if i!=x and i!=y:
+            full[:,k] = data[:,i]
+            k += 1
+    reduced = np.delete(full, 1, 1)
+    return full, reduced
+
+def directionality_test_pwCGC(data, i, j, max_order=5, ic='aic', significance=0.05, test='chi2'):
+    """
+    # TODO: Add description
+    For now using only chi2 test and lag order selection instead of customizeable lag
+    """
+    # Significance 
+    assert significance<=1
+    significance = 1 - significance
+
+    # Time samples
+    T = data.shape[0]
+
+    ##### i --> j #####
+    ts_full, ts_reduced = reorder_y2x(data, i, j)
+    # FULL MODEL
+    model_full = VAR(ts_full)
+    results_full = model_full.fit(maxlags=max_order, ic=ic)
+    order_full = results_full.k_ar
+    residuals_full = results_full.resid
+    res_cov_full = ((residuals_full.T @ residuals_full))/(T-order_full-1)
+    # REDUCED MODEL
+    model_reduced = VAR(ts_reduced)
+    results_reduced = model_reduced.fit(maxlags=max_order, ic=ic)
+    order_reduced = results_reduced.k_ar
+    residuals_reduced = results_reduced.resid
+    res_cov_reduced = ((residuals_reduced.T @ residuals_reduced))/(T-order_reduced-1)
+    # STATS
+    order = max([order_full, order_reduced])
+    F_i2j = np.log(np.abs(res_cov_reduced[0,0])) - np.log(np.abs(res_cov_full[0,0])) # F-value
+    Score_i2j = 1 - (1 - chi2.cdf((T-order)*F_i2j, order)) # 1 - P-value
+    evidence_i2j = np.where(Score_i2j>=significance, 1, np.nan)
+
+
+    ##### j --> i #####
+    ts_full, ts_reduced = reorder_y2x(data, j, i)
+    # FULL MODEL
+    model_full = VAR(ts_full)
+    results_full = model_full.fit(maxlags=max_order, ic=ic)
+    order_full = results_full.k_ar
+    residuals_full = results_full.resid
+    res_cov_full = ((residuals_full.T @ residuals_full))/(T-order_full-1)
+    # REDUCED MODEL
+    model_reduced = VAR(ts_reduced)
+    results_reduced = model_reduced.fit(maxlags=max_order, ic=ic)
+    order_reduced = results_reduced.k_ar
+    residuals_reduced = results_reduced.resid
+    res_cov_reduced = ((residuals_reduced.T @ residuals_reduced))/(T-order_reduced-1)
+    # STATS
+    order = max([order_full, order_reduced])
+    F_j2i = np.log(np.abs(res_cov_reduced[0,0])) - np.log(np.abs(res_cov_full[0,0])) # F-value
+    Score_j2i = 1 - (1 - chi2.cdf((T-order)*F_j2i, order)) # 1 - P-value
+    evidence_j2i = np.where(Score_j2i>=significance, 1, np.nan)
+
+    return (
+        np.array([F_i2j]), np.array([F_j2i]), 
+        np.array([evidence_i2j]), np.array([evidence_j2i]), 
+        np.array([Score_i2j]), np.array([Score_j2i])
+    )
 
 if __name__ == '__main__':
     pass

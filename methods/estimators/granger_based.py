@@ -4,7 +4,7 @@ import os
 from statsmodels.tsa.stattools import adfuller
 
 ## Relative imports
-from methods.utils import directionality_test_GC
+from methods.utils import directionality_test_GC, directionality_test_pwCGC
 from analysis.utils import generate_report
 from utils.handle_arguments import initialize_and_grep_files  
 
@@ -69,14 +69,14 @@ class pwGC():
         if verbose:
             print("Done!")
             print("-----")
-            print("Computing bivariate Granger influence")
+            print("Computing pairwise Granger influence")
 
         # Compute GC causality
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i if run_self_loops else i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
 
-                # In theory, bivariate GC should only be used for stationary time series
+                # Pairwise GC should only be used for stationary time series
                 # We can implement a work around, but it is deactivated by default because
                 #       it's not clear this is the correct solution
                 if make_stationary:
@@ -103,7 +103,7 @@ class pwGC():
                     print("Done!")
                     print("-----")
 
-                # Generate report --> NO surrogates, and bidirectional influences
+                # Generate report --> NO surrogates, nor bidirectional influences
                     print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
                 generate_report(
                     self.output_dir, name_subject, roi_i, roi_j,
@@ -159,6 +159,7 @@ class pwCGC():
        # Lags to test; in this scenario, always negative
         min_lag = np.abs(self.opts.min_lag)
         self.lags = np.arange(1,min_lag+1)
+        self.max_order = min_lag
 
         # Load config 
         self.length = self.opts.length
@@ -171,14 +172,121 @@ class pwCGC():
         if N is None:
             N = sorted(arrary.shape)[0] # By chance, smaller dimension of the array (the biggest is likely to be time samples)
         
-        stationary_ndarray = arrary * 0
+        stationary_ndarray = np.copy(arrary)
         for i in range(N):
-            p = adfuller(arrary, autolag="AIC")[1]
+            p = adfuller(arrary[:,i], autolag="AIC")[1]
             if p>=0.05:
                 print(f"Time series {i} was not stationary (p={p} Adjusted Dickey-Fullet test using AIC). \n It will be made stationary: out[i]=ndarrary[i+1]-ndarray[i]! Be sure this is what you want...")
-                stationary_ndarray = np.diff(arrary)
+                stationary_ndarray[:,i] = np.diff(arrary[:,i])
         
         return stationary_ndarray
+    
+    def fit_subject(
+            self, subject_file, ic='aic', make_stationary=False, verbose=True
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+        
+        name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-pwCGC'
+        print(f"Participant ID: {name_subject}")
+        if verbose:
+            print("Loading data")
+
+        # Load time series from subject -- dims: time-points X total-ROIs
+        time_series = np.genfromtxt(subject_file, delimiter='\t') 
+        if np.isnan(time_series[:,0]).all():
+            time_series = time_series[:,1:] # First column is dropped due to Nan
+        limit = int(time_series.shape[0]*0.01*self.length)
+
+        # ROIs from input command
+        self.ROIs = list(range(time_series.shape[-1])) if self.opts.rois[0] == -1 else [roi-1 for roi in self.opts.rois]
+        self.ROIs = sorted(self.ROIs)
+        
+        # Time series to analyse -- dims: time-points X ROIs
+        TS2analyse = np.array([time_series[:limit,roi] for roi in self.ROIs]).T
+        # Pairwise conditional GC should only be used for stationary time series
+        # We can implement a work around, but it is deactivated by default because
+        #       it's not clear this is the correct solution
+        if make_stationary:
+            TS2analyse = self.__stationarity_test(TS2analyse)
+        
+        if verbose:
+            print("Done!")
+            print("-----")
+            print("Computing pairwise conditional Granger influence")
+
+        # Compute GC causality
+        for i, roi_i in enumerate(self.ROIs):
+            for j in range(i+1, len(self.ROIs)):
+                roi_j = self.ROIs[j]
+
+                # Conditional GC Scores
+                if verbose:
+                    print(f"Estimating the directionality for ROIs [{roi_i},{roi_j}]")
+                R_i2j, R_j2i, evidence_i2j, evidence_j2i, Score_i2j, Score_j2i = directionality_test_pwCGC(
+                    TS2analyse, i, j, max_order=self.max_order, ic=ic, significance=0.05, test='chi2'
+                )
+
+                if verbose:
+                    print("Done!")
+                    print("-----")
+
+                # Generate report --> NO surrogates, nor bidirectional influences
+                    print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
+                generate_report(
+                    self.output_dir, name_subject, roi_i, roi_j,
+                    [0], R_i2j, R_j2i, R_i2j*0, R_j2i*0,
+                    Score_i2j, Score_j2i, Score_i2j*0, 
+                    evidence_i2j, evidence_j2i, evidence_i2j*0
+                )
+
+                if verbose:
+                    print("Done!")
+                    print("-----")
+        print("Subject finished!")
+        print("-------------------------------")
+        return name_subject
+    
+    def fit_dataset(
+            self, ic='aic', make_stationary=False
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+
+        print("INFO: Parallel or sequential processing depends on the input arguments --num_jobs")
+        name_subjects = []
+        if self.opts.num_jobs == 1:
+            print("============= Sequential processing =================")
+            for f in self.files:
+                name_subjects.append(
+                    self.fit_subject(f, ic=ic, make_stationary=make_stationary, verbose=False)
+                )
+        else:
+            print("============== Parallel processing ==================")
+            name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
+                delayed(self.fit_subject)(f, ic=ic, make_stationary=make_stationary, verbose=False)
+                for f in self.files
+            )
 
 if __name__ == '__main__':
     pass
