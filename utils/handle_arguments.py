@@ -64,7 +64,7 @@ def optional_arguments(main_parser, data=None):
         main_parser.add_argument('--subjects', type=str, default=['-1'], nargs='*', help="List of subjects to process. Default is all. Type -1 for all.")
         main_parser.add_argument('--rois', type=int, default=[-1], nargs='+', help="Space separated list of ROIs to analyse. Set to -1 for whole network analysis. Default is -1")
         main_parser.add_argument('--num_surrogates', type=int, default=100, help="Number of surrogates to generate")
-        main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test")
+        main_parser.add_argument('--min_lag', type=int, default=-30, help="Minimum value of the negative lag to test. For Conditional GC is the maximum order of the model.")
         main_parser.add_argument('--max_lag', type=int, default=31, help="Maximum value of the positive lag to test")
         main_parser.add_argument('--runs', type=int, default=5, help="Number of times to train the reservoir with the real samples")
 
