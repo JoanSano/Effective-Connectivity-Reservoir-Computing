@@ -106,7 +106,6 @@ class Subject_EC():
         header_interaction = self.headers[pair_ID]
         if np.ndim(roi_results) == 1:
             roi_results = np.expand_dims(roi_results, axis=0)
-            print("Only a single lag has been computed, the info that this plot offers is zero. It should be noted that for conditional GC, this also does not make sense")
         lags = roi_results[:, header_interaction["time-lags"]]
         i2j_key, j2i_key, ij_key = self.__interaction_keys(roi_i, roi_j)
 
