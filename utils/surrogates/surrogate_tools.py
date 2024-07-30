@@ -11,8 +11,9 @@ def create_surrogates(time_series, ROIS, N_surrogates, factor=10):
     TODO: Add documentation
     time_series (ROIs X 1 X time-points):
     """
+    nR, one, T = time_series.shape
+    assert one==1, "Incorrect shape of time series. It should be: ROIs X 1 X time-points"
     Size_population_surrogates = N_surrogates * factor
-    T = time_series.shape[-1]
     surrogates = np.zeros((len(ROIS),Size_population_surrogates,T))
     for r, roi in enumerate(ROIS):
         for surr_sample in range(Size_population_surrogates):
