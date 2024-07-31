@@ -323,6 +323,11 @@ def directionality_test_pwCGC(data, i, j, max_order=5, ic='aic', significance=0.
 
 class Spectral_utils():
     def __init__(self, time_series, max_lags=15, IC='aic', tol=1e-8):
+        """
+        TODO: Add documentation
+
+        time series is of dimensions T x Regions
+        """
         self.time_series = time_series
         self.max_lags = max_lags
         self.ic = IC
@@ -795,7 +800,7 @@ class Spectral_utils():
         
         return f, fres
     
-    def scgcm_to_cgm(self, f, fres=None, max_freq=None):
+    def spwcgcm_to_cgm(self, f, fres=None, max_freq=None):
         """
         Average (integrate) frequency-domain causality over specified frequency range.
 
@@ -895,11 +900,45 @@ class Spectral_utils():
         if (fres is None) and (max_freq is not None):
             fres = f.shape[-1]
             xx = np.linspace(0, 2*np.pi, fres)
-            
+
             xx_lim = xx[xx<=max_freq+.1]
             f_lim = f[...,xx<=max_freq+.1]
             
             F = cumulative_simpson(f_lim, x=xx_lim, axis=-1)[...,-1]
             return F, xx_lim
+        
+def directionality_test_spwcgc(data, t_surrogates, n_ROIS, max_order=15, ic='aic', significance=0.05, tol=1e-8):
+    """
+    TODO: Add documentation
+    """
+
+    # Real data
+    spwcgc = Spectral_utils(data, max_lags=max_order, IC=ic, tol=tol)
+    _, G, _ = spwcgc.var_to_autocov()
+    G = spwcgc.transpose_sequence(G)
+    S, _ = spwcgc.autocov_to_cpsd(G)
+    f, _ = spwcgc.autocov_to_spwcgc()
+    F, x_axis = spwcgc.spwcgcm_to_cgm(f)
+
+    # All surrogates
+    N_surrogates = t_surrogates.shape[1]
+    F_surrs = np.zeros((N_surrogates,n_ROIS,n_ROIS))
+    f_surrs = np.empty(shape=(N_surrogates,), dtype=object)
+    x_surrs = np.empty(shape=(N_surrogates,), dtype=object)
+    for s in range(N_surrogates):
+        spcgc_surr = Spectral_utils(t_surrogates[:,s,:].T, max_lags=max_order, IC=ic, tol=tol)
+        fs, _ = spcgc_surr.autocov_to_spwcgc()
+        Fs, xs = spcgc_surr.spwcgcm_to_cgm(fs)
+
+        F_surrs[s] = Fs
+        f_surrs[s] = fs
+        x_surrs[s] = xs
+
+    # Non-parametric test
+    p_val_F = (np.abs(F_surrs) >= np.abs(F)).mean(axis=0)  + np.eye(n_ROIS) # not including the diagonal (i.e., p(1,1)=1)
+    evidence_F = np.where(p_val_F<=significance, 1, 0)
+
+    return ((F, f, x_axis), (F_surrs, f_surrs, x_surrs), (p_val_F, evidence_F))
+
 if __name__ == '__main__':
     pass
