@@ -85,6 +85,8 @@ def generate_report(
         'SEM ' + j2ilabel + 'Surrogate': sem_j2is
     })
     results.to_csv(name_subject_RCC_numerical, index=False, sep='\t', decimal='.')
+    
+    return numerical, figures
 
 def process_subject_summary(
         output_dir, name_subject

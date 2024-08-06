@@ -74,3 +74,4 @@ def plot_evidence(lags, *to_plot, **kwargs):
         plt.show()
     plt.close()
     return fig
+
