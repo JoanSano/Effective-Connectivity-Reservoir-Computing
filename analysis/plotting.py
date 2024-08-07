@@ -75,3 +75,38 @@ def plot_evidence(lags, *to_plot, **kwargs):
     plt.close()
     return fig
 
+def plot_matrix(causality_measure, fig_name, format, dpi, node_labels=None, binary=False, title=None):
+    fig, ax = plt.subplots(1,1, figsize=(6,6))
+    pos = ax.imshow(causality_measure, cmap="binary" if binary else "coolwarm")
+    ax.set_xticks(range(len(node_labels))), ax.set_yticks(range(len(node_labels)))
+    if node_labels is not None:
+        ax.set_xticklabels(node_labels), ax.set_yticklabels(node_labels)
+    ax.set_xlabel("To ROI", fontweight='bold')
+    ax.set_ylabel("From ROI", fontweight='bold')
+    if title is not None:
+        ax.set_title(title)
+    if not binary:
+        fig.colorbar(pos, ax=ax)
+    plt.savefig(fig_name, format=format, dpi=dpi)
+    plt.close()
+
+""" def plot_spectral(spectral_measure, x_axis, spectral_measure_surrogates=None, x_axis_surrogates=None):
+    fig, axes = plt.subplots(ts.shape[1],ts.shape[1], figsize=(ts.shape[1]*ts.shape[1],ts.shape[1]*ts.shape[1]))
+    for i in range(ts.shape[1]):
+        for j in range(ts.shape[1]):
+            axes[i,j].set_title("|"+r'$f_{\theta}$'+f"({i+1},{j+1})|")
+            axes[i,j].spines[["top","right"]].set_visible(False)
+            axes[i,j].set_xlim([0,x_axis[-1]])
+            if i!= ts.shape[1]-1:
+                axes[i,j].set_xticks([])
+            else:
+                axes[i,j].set_xlabel(r'$\theta$')
+            
+            # Surrogates
+            for s in range(N_surrogates):
+                axes[i,j].plot(x_surrs[s], f_surrs[s][i,j], linewidth=1.5, color='gray', alpha=0.3)
+            
+            # Real value
+            axes[i,j].plot(x_axis, f[i,j], linewidth=1.5, color='black', label=r'$F_{cGCM}$'+f"({i+1},{j+1}) = {round(F[i,j],3)}")
+            if i!=j:
+                axes[i,j].legend(frameon=False) """

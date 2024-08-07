@@ -6,6 +6,7 @@ from statsmodels.tsa.stattools import adfuller
 ## Relative imports
 from methods.utils import directionality_test_GC, directionality_test_pwCGC, directionality_test_spwcgc
 from analysis.utils import generate_report
+from analysis.plotting import plot_matrix
 from utils.handle_arguments import initialize_and_grep_files  
 from utils.surrogates.surrogate_tools import create_surrogates
 
@@ -323,7 +324,7 @@ class Spectral_pwCGC():
     
     def fit_subject(
             self, subject_file, make_stationary=False, max_order=15, ic='aic', 
-            significance=0.05, tol=1e-8, save_surrogates=False, plots=False, verbose=True
+            significance=0.05, tol=1e-8, save_surrogates=False, plot=False, verbose=False
         ):
         """
         TODO: Add description of the function
@@ -386,16 +387,17 @@ class Spectral_pwCGC():
         ) = directionality_test_spwcgc(
             TS2analyse[:,0,:].T, surrogates, self.nROIs, max_order=max_order, ic=ic, significance=significance, tol=tol
         )
+        if verbose:
+            print("Done!")
+            print("-----")
         
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
 
-                if verbose:
-                    print("Done!")
-                    print("-----")
 
                 # Generate report --> NO surrogates, nor bidirectional influences
+                if verbose:
                     print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
                 numerical, figures = generate_report(
                     self.output_dir, name_subject, roi_i, roi_j,
@@ -418,21 +420,59 @@ class Spectral_pwCGC():
             if verbose:
                 print("Done!")
                 print("-----")
+        if plot:
+            plot_matrix(
+                F, os.path.join(figures, "spectral-Granger_measure.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=False, 
+                title=name_subject
+            )
+            plot_matrix(
+                evidence_F, os.path.join(figures, "spectral-Granger_measure-binary.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=True, 
+                title=name_subject
+            )
+
         print("Subject finished!")
         print("-------------------------------")
-        
-        if plots:
-            if verbose:
-                print("Plotting subject!")
-            # TODO: Call the plots from the plotting module
-
-            if verbose:
-                print("Done!")
-                print("-----")
-
         return name_subject
-
-        # Drop the summary and figures
     
+    def fit_dataset(
+            self, ic='aic', make_stationary=False, max_order=15, tol=1e-8, significance=0.05, save_surrogates=False, plot=False
+        ):
+        """
+        TODO: Add description of the function
+
+        Arguments
+        -----------
+        subject_file: (string) Full path to the file containing the time series. ROI time series are stored as columns.
+        TODO: finish arguments
+
+        Outputs
+        -----------
+        TODO: Add output description.
+        """
+
+        print("INFO: Parallel or sequential processing depends on the input arguments --num_jobs")
+        name_subjects = []
+        if self.opts.num_jobs == 1:
+            print("============= Sequential processing =================")
+            for f in self.files:
+                name_subjects.append(
+                    self.fit_subject(
+                        f, ic=ic, make_stationary=make_stationary, 
+                        max_order=15, tol=tol, significance=significance, 
+                        save_surrogates=save_surrogates, verbose=False, plot=plot
+                    )
+                )
+        else:
+            print("============== Parallel processing ==================")
+            name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
+                delayed(self.fit_subject)(
+                        f, ic=ic, make_stationary=make_stationary, 
+                        max_order=15, tol=tol, significance=significance, 
+                        save_surrogates=save_surrogates, verbose=False, plot=plot
+                    )
+                for f in self.files
+            )
 if __name__ == '__main__':
     pass
