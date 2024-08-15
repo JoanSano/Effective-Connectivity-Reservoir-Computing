@@ -211,8 +211,10 @@ class ROC_utils():
         self.ROC_BOOTSTRAPPED = ROC_BOOTSTRAPPED
         return ROC_BOOTSTRAPPED
 
-    def plot(self, sample_auc, color="black", save: str=None, dpi: int=None):
-        fig, ax = plt.subplots(1,1,figsize=(6,5))
+    def plot(self, sample_auc, color="black", save: str=None, dpi: int=None, figure=None):
+        if figure is None:
+            fig, ax = plt.subplots(1,1,figsize=(6,5))
+
         if self.ROC_BOOTSTRAPPED is None:
             raise ValueError("Please run bootstrap before plotting")
         
@@ -238,7 +240,7 @@ class ROC_utils():
                 plt.savefig(save, format=format) 
         else:
             plt.show()
-        return fig
+        return fig, ax
 
 class DeLong_Test():    
     # Adopted from https://github.com/yandexdataschool/roc_comparison 
