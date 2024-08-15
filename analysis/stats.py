@@ -214,7 +214,8 @@ class ROC_utils():
     def plot(self, sample_auc, color="black", save: str=None, dpi: int=None, figure=None):
         if figure is None:
             fig, ax = plt.subplots(1,1,figsize=(6,5))
-
+        else:
+            fig, ax = figure   
         if self.ROC_BOOTSTRAPPED is None:
             raise ValueError("Please run bootstrap before plotting")
         
