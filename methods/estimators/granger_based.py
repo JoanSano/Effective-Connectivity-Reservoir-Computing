@@ -34,7 +34,7 @@ class pwGC():
         return ndarrary
 
     def fit_subject(
-            self, subject_file, run_self_loops=False, make_stationary=False, verbose=True
+            self, subject_file, run_self_loops=False, make_stationary=False, verbose=True, plot=False
         ):
         """
         TODO: Add description of the function
@@ -74,6 +74,7 @@ class pwGC():
             print("Computing pairwise Granger influence")
 
         # Compute GC causality
+        F, evidence = np.zeros((len(self.ROIs),len(self.ROIs))), np.zeros((len(self.ROIs),len(self.ROIs)))
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i if run_self_loops else i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
@@ -107,22 +108,35 @@ class pwGC():
 
                 # Generate report --> NO surrogates, nor bidirectional influences
                     print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
-                generate_report(
+                numerical, figures = generate_report(
                     self.output_dir, name_subject, roi_i, roi_j,
                     -self.lags, R_i2j, R_j2i, R_i2j*0, R_j2i*0,
                     Score_i2j, Score_j2i, Score_i2j*0, 
                     evidence_i2j, evidence_j2i, evidence_i2j*0
                 )
+                F[i,j], F[j,i] = R_i2j, R_j2i
+                evidence[i,j], evidence[j,i] = evidence_i2j, evidence_j2i
 
                 if verbose:
                     print("Done!")
                     print("-----")
+        if plot:
+            plot_matrix(
+                F, os.path.join(figures, "Granger_measure.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=False, 
+                title=name_subject
+            )
+            plot_matrix(
+                evidence, os.path.join(figures, "binary.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=True, 
+                title=name_subject
+            )
         print("Subject finished!")
         print("-------------------------------")
         return name_subject
     
     def fit_dataset(
-            self, run_self_loops=False, make_stationary=False
+            self, run_self_loops=False, make_stationary=False, plot=False
         ):
         """
         TODO: Add description of the function
@@ -143,12 +157,12 @@ class pwGC():
             print("============= Sequential processing =================")
             for f in self.files:
                 name_subjects.append(
-                    self.fit_subject(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
+                    self.fit_subject(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False, plot=plot)
                 )
         else:
             print("============== Parallel processing ==================")
             name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
-                delayed(self.fit_subject)(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False)
+                delayed(self.fit_subject)(f, run_self_loops=run_self_loops, make_stationary=make_stationary, verbose=False, plot=plot)
                 for f in self.files
             )
 
@@ -184,7 +198,7 @@ class pwCGC():
         return stationary_ndarray
     
     def fit_subject(
-            self, subject_file, ic='aic', make_stationary=False, verbose=True
+            self, subject_file, ic='aic', make_stationary=False, verbose=True, plot=False
         ):
         """
         TODO: Add description of the function
@@ -227,7 +241,8 @@ class pwCGC():
             print("-----")
             print("Computing pairwise conditional Granger influence")
 
-        # Compute GC causality
+        # Compute CGC causality
+        F, evidence = np.zeros((len(self.ROIs),len(self.ROIs))), np.zeros((len(self.ROIs),len(self.ROIs)))
         for i, roi_i in enumerate(self.ROIs):
             for j in range(i+1, len(self.ROIs)):
                 roi_j = self.ROIs[j]
@@ -245,22 +260,35 @@ class pwCGC():
 
                 # Generate report --> NO surrogates, nor bidirectional influences
                     print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
-                generate_report(
+                numerical, figures = generate_report(
                     self.output_dir, name_subject, roi_i, roi_j,
                     [0], R_i2j, R_j2i, R_i2j*0, R_j2i*0,
                     Score_i2j, Score_j2i, Score_i2j*0, 
                     evidence_i2j, evidence_j2i, evidence_i2j*0
                 )
+                F[i,j], F[j,i] = R_i2j, R_j2i
+                evidence[i,j], evidence[j,i] = evidence_i2j, evidence_j2i
 
                 if verbose:
                     print("Done!")
                     print("-----")
+        if plot:
+            plot_matrix(
+                F, os.path.join(figures, "Granger_measure.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=False, 
+                title=name_subject
+            )
+            plot_matrix(
+                evidence, os.path.join(figures, "binary.pdf"), 
+                format='pdf', dpi=200, node_labels=self.ROIs, binary=True, 
+                title=name_subject
+            )
         print("Subject finished!")
         print("-------------------------------")
         return name_subject
     
     def fit_dataset(
-            self, ic='aic', make_stationary=False
+            self, ic='aic', make_stationary=False, plot=False
         ):
         """
         TODO: Add description of the function
@@ -281,12 +309,12 @@ class pwCGC():
             print("============= Sequential processing =================")
             for f in self.files:
                 name_subjects.append(
-                    self.fit_subject(f, ic=ic, make_stationary=make_stationary, verbose=False)
+                    self.fit_subject(f, ic=ic, make_stationary=make_stationary, verbose=False, plot=plot)
                 )
         else:
             print("============== Parallel processing ==================")
             name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
-                delayed(self.fit_subject)(f, ic=ic, make_stationary=make_stationary, verbose=False)
+                delayed(self.fit_subject)(f, ic=ic, make_stationary=make_stationary, verbose=False, plot=plot)
                 for f in self.files
             )
 
@@ -313,7 +341,7 @@ class Spectral_pwCGC():
         if N is None:
             N = sorted(arrary.shape)[0] # By chance, smaller dimension of the array (the biggest is likely to be time samples)
         
-        stationary_ndarray = np.copy(arrary)
+        stationary_ndarray = np.copy(arrary[:-1,:])
         for i in range(N):
             p = adfuller(arrary[:,i], autolag="AIC")[1]
             if p>=0.05:
@@ -323,7 +351,7 @@ class Spectral_pwCGC():
         return stationary_ndarray
     
     def fit_subject(
-            self, subject_file, make_stationary=False, max_order=15, ic='aic', 
+            self, subject_file, make_stationary=False, ic='aic', 
             significance=0.05, tol=1e-8, save_surrogates=False, plot=False, verbose=False
         ):
         """
@@ -339,7 +367,7 @@ class Spectral_pwCGC():
         TODO: Add output description.
         """
         
-        name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-pwCGC'
+        name_subject = subject_file.split("/")[-1].split("_TS")[0] + '_Length-' + str(self.length) + '_Method-spwCGC'
         print(f"Participant ID: {name_subject}")
         if verbose:
             print("Loading data")
@@ -380,64 +408,70 @@ class Spectral_pwCGC():
             print("Done!")
             print("-----")
             print("Computing spectral pairwise conditional Granger influence")
-        (
-            (F, f, x_axis), 
-            (F_surrs, f_surrs, x_surrs), 
-            (p_val_F, evidence_F)
-        ) = directionality_test_spwcgc(
-            TS2analyse[:,0,:].T, surrogates, self.nROIs, max_order=max_order, ic=ic, significance=significance, tol=tol
-        )
-        if verbose:
-            print("Done!")
-            print("-----")
-        
-        for i, roi_i in enumerate(self.ROIs):
-            for j in range(i+1, len(self.ROIs)):
-                roi_j = self.ROIs[j]
+        try: 
+            (
+                (F, f, x_axis), 
+                (F_surrs, f_surrs, x_surrs), 
+                (p_val_F, evidence_F)
+            ) = directionality_test_spwcgc(
+                TS2analyse[:,0,:].T, surrogates, self.nROIs, max_order=self.max_order, ic=ic, significance=significance, tol=tol
+            )
+            if verbose:
+                print("Done!")
+                print("-----")
+            
+            for i, roi_i in enumerate(self.ROIs):
+                for j in range(i+1, len(self.ROIs)):
+                    roi_j = self.ROIs[j]
 
 
-                # Generate report --> NO surrogates, nor bidirectional influences
+                    # Generate report --> NO surrogates, nor bidirectional influences
+                    if verbose:
+                        print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
+                    numerical, figures = generate_report(
+                        self.output_dir, name_subject, roi_i, roi_j,
+                        [0], np.array([F[i,j]]), np.array(F[j,i]), np.array([0]), np.array([0]),
+                        np.array([1-p_val_F[i,j]]), np.array([1-p_val_F[j,i]]), np.array([0]), 
+                        np.array([evidence_F[i,j]]), np.array([evidence_F[j,i]]), np.array([0])
+                    )
+                    np.save(os.path.join(numerical, "frequency-measure.npy"), {"f":f, "frequency": x_axis}, allow_pickle=True)
+
+                    if verbose:
+                        print("Done!")
+                        print("-----")
+
+            if save_surrogates:
                 if verbose:
-                    print(f"Saving the summary for ROIs [{roi_i},{roi_j}]")
-                numerical, figures = generate_report(
-                    self.output_dir, name_subject, roi_i, roi_j,
-                    [0], np.array([F[i,j]]), np.array(F[j,i]), np.array([0]), np.array([0]),
-                    np.array([p_val_F[i,j]]), np.array([p_val_F[i,j]]), np.array([0]), 
-                    np.array([evidence_F[i,j]]), np.array([evidence_F[j,i]]), np.array([0])
-                )
-                np.save(os.path.join(numerical, "frequency-measure.npy"), {"f":f, "frequency": x_axis}, allow_pickle=True)
+                    print("Saving surrogate files!")
+                np.save(os.path.join(numerical, "frequency-measure_surrogates.npy"), {"f":f_surrs, "frequency": x_surrs}, allow_pickle=True)
+                np.save(os.path.join(numerical, "averaged-measure_surrogates.npy"), F_surrs, allow_pickle=True)
 
                 if verbose:
                     print("Done!")
                     print("-----")
+            if plot:
+                plot_matrix(
+                    F, os.path.join(figures, "spectral-Granger_measure.pdf"), 
+                    format='pdf', dpi=200, node_labels=self.ROIs, binary=False, 
+                    title=name_subject
+                )
+                plot_matrix(
+                    evidence_F, os.path.join(figures, "spectral-binary.pdf"), 
+                    format='pdf', dpi=200, node_labels=self.ROIs, binary=True, 
+                    title=name_subject
+                )
 
-        if save_surrogates:
-            if verbose:
-                print("Saving surrogate files!")
-                np.save(os.path.join(numerical, "frequency-measure_surrogates.npy"), {"f":f_surrs, "frequency": x_surrs}, allow_pickle=True)
-                np.save(os.path.join(numerical, "averaged-measure_surrogates.npy"), F_surrs, allow_pickle=True)
-
-            if verbose:
-                print("Done!")
-                print("-----")
-        if plot:
-            plot_matrix(
-                F, os.path.join(figures, "spectral-Granger_measure.pdf"), 
-                format='pdf', dpi=200, node_labels=self.ROIs, binary=False, 
-                title=name_subject
-            )
-            plot_matrix(
-                evidence_F, os.path.join(figures, "spectral-Granger_measure-binary.pdf"), 
-                format='pdf', dpi=200, node_labels=self.ROIs, binary=True, 
-                title=name_subject
-            )
-
-        print("Subject finished!")
-        print("-------------------------------")
+            print("Subject finished!")
+            print("-------------------------------")
+        except:
+            with open(self.output_dir+"/logs.txt",'a') as log:
+                log.write(f"{name_subject} \t could not be fitted with the specified parameters \n")
+            print("Problematic subject!")
+            print("-------------------------------")
         return name_subject
     
     def fit_dataset(
-            self, ic='aic', make_stationary=False, max_order=15, tol=1e-8, significance=0.05, save_surrogates=False, plot=False
+            self, ic='aic', make_stationary=False, tol=1e-8, significance=0.05, save_surrogates=False, plot=False
         ):
         """
         TODO: Add description of the function
@@ -460,7 +494,7 @@ class Spectral_pwCGC():
                 name_subjects.append(
                     self.fit_subject(
                         f, ic=ic, make_stationary=make_stationary, 
-                        max_order=15, tol=tol, significance=significance, 
+                        tol=tol, significance=significance, 
                         save_surrogates=save_surrogates, verbose=False, plot=plot
                     )
                 )
@@ -469,7 +503,7 @@ class Spectral_pwCGC():
             name_subjects = Parallel(n_jobs=self.opts.num_jobs)(
                 delayed(self.fit_subject)(
                         f, ic=ic, make_stationary=make_stationary, 
-                        max_order=15, tol=tol, significance=significance, 
+                        tol=tol, significance=significance, 
                         save_surrogates=save_surrogates, verbose=False, plot=plot
                     )
                 for f in self.files

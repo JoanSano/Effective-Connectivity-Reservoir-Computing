@@ -4,17 +4,16 @@ if __name__ == '__main__':
     method = "spwCGC" # "pwCGC" # "pwGC"
 
     # Create arguments to start the process
-    # Simulation 28 should have a minimum lag of -20, otherwise it will raise an error
-    for sim_num in [28]: #1,7,15,19,
-        for L in [70,75,80,85,90,95,100]:
+    for sim_num in [28]: #1,7,15,19, 28
+        for L in [100]:#70,75,80,85,90,95,
             args = {
                 "dir": f"./Datasets/Netsim/Sim-{sim_num}/Timeseries",
                 "r_folder": f"Results_Netsim-Dataset_Sim-{sim_num}_Method-{method}/Results_Netsim-Dataset_Sim-{sim_num}_Length-{L}",
-                "num_jobs": 6,
+                "num_jobs": 4,
                 "length": L,
                 "subjects": ["-1"],
                 "rois": [-1],
-                "min_lag": -10,
+                "min_lag": -1,
                 "num_surrogates":500,
                 "fmri": True
             }   
